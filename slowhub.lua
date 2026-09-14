@@ -1038,7 +1038,7 @@ headerStroke.Thickness = 1
 headerStroke.Transparency = 0.2
 
 titleLbl = Instance.new("TextLabel")
-titleLbl.Size = UDim2.new(1, -180, 1, 0)
+titleLbl.Size = UDim2.new(1, -240, 1, 0)
 titleLbl.Position = UDim2.new(0, 80, 0, 0)
 titleLbl.BackgroundTransparency = 1
 titleLbl.Text = "Slow Hub"
@@ -1051,7 +1051,7 @@ titleLbl.Parent = header
 
 minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 26, 0, 26)
-minBtn.Position = UDim2.new(1, -88, 0.5, -13)
+minBtn.Position = UDim2.new(1, -120, 0.5, -13)
 minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 minBtn.Text = ""
 minBtn.AutoButtonColor = false
@@ -1070,7 +1070,7 @@ minIcon.Parent = minBtn
 
 maxBtn = Instance.new("TextButton")
 maxBtn.Size = UDim2.new(0, 26, 0, 26)
-maxBtn.Position = UDim2.new(1, -58, 0.5, -13)
+maxBtn.Position = UDim2.new(1, -88, 0.5, -13)
 maxBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 maxBtn.Text = ""
 maxBtn.AutoButtonColor = false
@@ -1089,7 +1089,7 @@ maxIcon.Parent = maxBtn
 
 closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 26, 0, 26)
-closeBtn.Position = UDim2.new(1, -28, 0.5, -13)
+closeBtn.Position = UDim2.new(1, -56, 0.5, -13)
 closeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 closeBtn.Text = ""
 closeBtn.AutoButtonColor = false
@@ -1193,7 +1193,7 @@ content = Instance.new("Frame")
 content.Size = UDim2.new(1, -SIDEBAR_W, 1, -(HEADER_H + FOOTER_H))
 content.Position = UDim2.new(0, SIDEBAR_W, 0, HEADER_H)
 content.BackgroundTransparency = 1
-content.ZIndex = 10
+content.ZIndex = 100
 content.Parent = main
 
 pages = {}
@@ -1231,7 +1231,7 @@ local function createPage(name)
     page.CanvasSize = UDim2.new(0, 0, 0, 0)
     page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     page.Visible = false
-    page.ZIndex = 11
+    page.ZIndex = 110
     page.Parent = content
     pages[name] = page
     return page
@@ -1284,7 +1284,7 @@ local function addPageTitle(page, text, subtext)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 13
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.ZIndex = 12
+    title.ZIndex = 130
     title.Parent = page
     if subtext then
         local sub = Instance.new("TextLabel")
@@ -1296,7 +1296,7 @@ local function addPageTitle(page, text, subtext)
         sub.Font = Enum.Font.Gotham
         sub.TextSize = 10
         sub.TextXAlignment = Enum.TextXAlignment.Left
-        sub.ZIndex = 12
+        sub.ZIndex = 130
         sub.Parent = page
     end
 end
@@ -1307,7 +1307,7 @@ local function makeCard(parent, y, h)
     card.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
     card.BackgroundTransparency = 0.7
     card.BorderSizePixel = 0
-    card.ZIndex = 12
+    card.ZIndex = 120
     card.Parent = parent
     Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
     return card
@@ -1323,7 +1323,7 @@ local function makeLabel(card, text, x, width)
     lbl.Font = Enum.Font.GothamMedium
     lbl.TextSize = 10
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.ZIndex = 13
+    lbl.ZIndex = 130
     lbl.Parent = card
     return lbl
 end
@@ -1339,7 +1339,7 @@ local function makeToggle(card, defaultState, callback)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
     btn.AutoButtonColor = false
-    btn.ZIndex = 13
+    btn.ZIndex = 130
     btn.Parent = card
     Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
     btn.MouseButton1Click:Connect(function()
@@ -1361,7 +1361,7 @@ local function makeButton(parent, text, y, w, h, color, callback)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 10
     btn.AutoButtonColor = false
-    btn.ZIndex = 13
+    btn.ZIndex = 130
     btn.Parent = parent
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     btn.MouseEnter:Connect(function()
@@ -1387,7 +1387,7 @@ local function makeInput(parent, y, placeholder, w, callback)
     box.Font = Enum.Font.Gotham
     box.TextSize = 10
     box.ClearTextOnFocus = false
-    box.ZIndex = 13
+    box.ZIndex = 130
     box.Parent = parent
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
     if callback then
@@ -1404,7 +1404,7 @@ local function addNotif(title, desc, duration)
     notif.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     notif.BackgroundTransparency = 0.05
     notif.BorderSizePixel = 0
-    notif.ZIndex = 100
+    notif.ZIndex = 200
     notif.Parent = gui
     Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 12)
 
@@ -1419,7 +1419,7 @@ local function addNotif(title, desc, duration)
     nIcon.BackgroundTransparency = 1
     nIcon.Image = ICONS.Star
     nIcon.ImageColor3 = PURPLE_BORDER
-    nIcon.ZIndex = 102
+    nIcon.ZIndex = 202
     nIcon.Parent = notif
 
     local nTitle = Instance.new("TextLabel")
@@ -1431,7 +1431,7 @@ local function addNotif(title, desc, duration)
     nTitle.Font = Enum.Font.GothamBold
     nTitle.TextSize = 12
     nTitle.TextXAlignment = Enum.TextXAlignment.Left
-    nTitle.ZIndex = 102
+    nTitle.ZIndex = 202
     nTitle.Parent = notif
 
     local nDesc = Instance.new("TextLabel")
@@ -1444,7 +1444,7 @@ local function addNotif(title, desc, duration)
     nDesc.TextSize = 10
     nDesc.TextXAlignment = Enum.TextXAlignment.Left
     nDesc.TextWrapped = true
-    nDesc.ZIndex = 102
+    nDesc.ZIndex = 202
     nDesc.Parent = notif
 
     local closeNotif = Instance.new("TextButton")
@@ -1452,7 +1452,7 @@ local function addNotif(title, desc, duration)
     closeNotif.Position = UDim2.new(1, -26, 0, 6)
     closeNotif.BackgroundTransparency = 1
     closeNotif.Text = ""
-    closeNotif.ZIndex = 103
+    closeNotif.ZIndex = 203
     closeNotif.Parent = notif
 
     local closeNotifIcon = Instance.new("ImageLabel")
@@ -1461,7 +1461,7 @@ local function addNotif(title, desc, duration)
     closeNotifIcon.BackgroundTransparency = 1
     closeNotifIcon.Image = "rbxassetid://14219436180"
     closeNotifIcon.ImageColor3 = TEXTDIM
-    closeNotifIcon.ZIndex = 104
+    closeNotifIcon.ZIndex = 204
     closeNotifIcon.Parent = closeNotif
 
     local dismissed = false
@@ -1499,7 +1499,7 @@ welcomeLbl.TextColor3 = TEXT
 welcomeLbl.Font = Enum.Font.GothamBold
 welcomeLbl.TextSize = 14
 welcomeLbl.TextXAlignment = Enum.TextXAlignment.Left
-welcomeLbl.ZIndex = 13
+welcomeLbl.ZIndex = 130
 welcomeLbl.Parent = welcomeCard
 
 creditLbl = Instance.new("TextLabel")
@@ -1511,7 +1511,7 @@ creditLbl.TextColor3 = TEXTDIM
 creditLbl.Font = Enum.Font.Gotham
 creditLbl.TextSize = 10
 creditLbl.TextXAlignment = Enum.TextXAlignment.Left
-creditLbl.ZIndex = 13
+creditLbl.ZIndex = 130
 creditLbl.Parent = welcomeCard
 
 infoCard = makeCard(homePage, 136, 32)
@@ -1526,7 +1526,7 @@ searchBar.Position = UDim2.new(0, 12, 0, 50)
 searchBar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
 searchBar.BackgroundTransparency = 0.4
 searchBar.BorderSizePixel = 0
-searchBar.ZIndex = 12
+searchBar.ZIndex = 120
 searchBar.Parent = playersPage
 Instance.new("UICorner", searchBar).CornerRadius = UDim.new(0, 8)
 
@@ -1536,7 +1536,7 @@ searchIcon.Position = UDim2.new(0, 8, 0.5, -7)
 searchIcon.BackgroundTransparency = 1
 searchIcon.Image = ICONS.Person
 searchIcon.ImageColor3 = TEXTDIM
-searchIcon.ZIndex = 13
+searchIcon.ZIndex = 130
 searchIcon.Parent = searchBar
 
 searchBox = Instance.new("TextBox")
@@ -1551,7 +1551,7 @@ searchBox.Font = Enum.Font.Gotham
 searchBox.TextSize = 11
 searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
-searchBox.ZIndex = 13
+searchBox.ZIndex = 130
 searchBox.Parent = searchBar
 
 playerScroll = Instance.new("ScrollingFrame")
@@ -1563,7 +1563,7 @@ playerScroll.ScrollBarThickness = 3
 playerScroll.ScrollBarImageColor3 = ACCENT
 playerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 playerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-playerScroll.ZIndex = 12
+playerScroll.ZIndex = 120
 playerScroll.Parent = playersPage
 
 playerLayout = Instance.new("UIListLayout", playerScroll)
@@ -1585,7 +1585,7 @@ local function createPlayerCard(plr, order)
     card.BackgroundTransparency = 0.3
     card.BorderSizePixel = 0
     card.LayoutOrder = order
-    card.ZIndex = 13
+    card.ZIndex = 130
     card.Parent = playerScroll
     Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
 
@@ -1595,7 +1595,7 @@ local function createPlayerCard(plr, order)
     avatar.BackgroundColor3 = CARD
     avatar.BorderSizePixel = 0
     avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=100&h=100"
-    avatar.ZIndex = 14
+    avatar.ZIndex = 140
     avatar.Parent = card
     Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
 
@@ -1608,7 +1608,7 @@ local function createPlayerCard(plr, order)
     nameLbl.Font = Enum.Font.GothamBold
     nameLbl.TextSize = 11
     nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-    nameLbl.ZIndex = 14
+    nameLbl.ZIndex = 140
     nameLbl.Parent = card
 
     local userLbl = Instance.new("TextLabel")
@@ -1620,7 +1620,7 @@ local function createPlayerCard(plr, order)
     userLbl.Font = Enum.Font.Gotham
     userLbl.TextSize = 9
     userLbl.TextXAlignment = Enum.TextXAlignment.Left
-    userLbl.ZIndex = 14
+    userLbl.ZIndex = 140
     userLbl.Parent = card
 
     local gotoBtn = Instance.new("TextButton")
@@ -1632,7 +1632,7 @@ local function createPlayerCard(plr, order)
     gotoBtn.Font = Enum.Font.GothamBold
     gotoBtn.TextSize = 10
     gotoBtn.AutoButtonColor = false
-    gotoBtn.ZIndex = 14
+    gotoBtn.ZIndex = 140
     gotoBtn.Parent = card
     Instance.new("UICorner", gotoBtn).CornerRadius = UDim.new(0, 6)
 
@@ -1739,7 +1739,7 @@ savedList.ScrollBarThickness = 3
 savedList.ScrollBarImageColor3 = ACCENT
 savedList.CanvasSize = UDim2.new(0, 0, 0, 0)
 savedList.AutomaticCanvasSize = Enum.AutomaticSize.Y
-savedList.ZIndex = 12
+savedList.ZIndex = 120
 savedList.Parent = tpPage
 
 savedLayout = Instance.new("UIListLayout", savedList)
@@ -1761,7 +1761,7 @@ local function refreshSavedSlots()
         card.BackgroundTransparency = 0.3
         card.BorderSizePixel = 0
         card.LayoutOrder = order
-        card.ZIndex = 13
+        card.ZIndex = 130
         card.Parent = savedList
         Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
 
@@ -1774,7 +1774,7 @@ local function refreshSavedSlots()
         lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 10
         lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.ZIndex = 14
+        lbl.ZIndex = 140
         lbl.Parent = card
 
         local goBtn = Instance.new("TextButton")
@@ -1786,7 +1786,7 @@ local function refreshSavedSlots()
         goBtn.Font = Enum.Font.GothamBold
         goBtn.TextSize = 9
         goBtn.AutoButtonColor = false
-        goBtn.ZIndex = 14
+        goBtn.ZIndex = 140
         goBtn.Parent = card
         Instance.new("UICorner", goBtn).CornerRadius = UDim.new(0, 6)
         goBtn.MouseButton1Click:Connect(function()
@@ -1804,7 +1804,7 @@ local function refreshSavedSlots()
         delBtn.Font = Enum.Font.GothamBold
         delBtn.TextSize = 9
         delBtn.AutoButtonColor = false
-        delBtn.ZIndex = 14
+        delBtn.ZIndex = 140
         delBtn.Parent = card
         Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
         delBtn.MouseButton1Click:Connect(function()
@@ -1884,6 +1884,16 @@ end)
 
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV")
+
+aimCard = makeCard(miraPage, 56, 32)
+makeLabel(aimCard, "Aimbot", 10, 200)
+makeToggle(aimCard, false, function(s)
+    Config.Aimbot.Enabled = s
+    if s then startAimbot() end
+end)
+
+aimShotCard = makeCard(miraPage, 94, 32)
+makeLabel(aimShotCard, "Aimbot • Auto Shot", 10, 200)
 makeToggle(aimShotCard, false, function(s) Config.Aimbot.AutoShot = s end)
 
 aimTMCard = makeCard(miraPage, 132, 32)
@@ -1975,7 +1985,7 @@ aboutLbl.TextSize = 11
 aboutLbl.TextXAlignment = Enum.TextXAlignment.Left
 aboutLbl.TextYAlignment = Enum.TextYAlignment.Top
 aboutLbl.TextWrapped = true
-aboutLbl.ZIndex = 13
+aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
 createTabButton("Home", ICONS.Home)
@@ -1998,7 +2008,7 @@ closeModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 closeModal.BackgroundTransparency = 0.5
 closeModal.BorderSizePixel = 0
 closeModal.Visible = false
-closeModal.ZIndex = 200
+closeModal.ZIndex = 300
 closeModal.Parent = gui
 
 modalBox = Instance.new("Frame")
@@ -2006,7 +2016,7 @@ modalBox.Size = UDim2.new(0, 320, 0, 160)
 modalBox.Position = UDim2.new(0.5, -160, 0.5, -80)
 modalBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 modalBox.BorderSizePixel = 0
-modalBox.ZIndex = 201
+modalBox.ZIndex = 301
 modalBox.Parent = closeModal
 Instance.new("UICorner", modalBox).CornerRadius = UDim.new(0, 16)
 
@@ -2024,7 +2034,7 @@ modalTitle.TextColor3 = TEXT
 modalTitle.Font = Enum.Font.GothamBold
 modalTitle.TextSize = 16
 modalTitle.TextXAlignment = Enum.TextXAlignment.Left
-modalTitle.ZIndex = 202
+modalTitle.ZIndex = 302
 modalTitle.Parent = modalBox
 
 modalDesc = Instance.new("TextLabel")
@@ -2037,7 +2047,7 @@ modalDesc.Font = Enum.Font.Gotham
 modalDesc.TextSize = 12
 modalDesc.TextXAlignment = Enum.TextXAlignment.Left
 modalDesc.TextWrapped = true
-modalDesc.ZIndex = 202
+modalDesc.ZIndex = 302
 modalDesc.Parent = modalBox
 
 cancelBtn = Instance.new("TextButton")
@@ -2049,7 +2059,7 @@ cancelBtn.TextColor3 = TEXT
 cancelBtn.Font = Enum.Font.GothamBold
 cancelBtn.TextSize = 12
 cancelBtn.AutoButtonColor = false
-cancelBtn.ZIndex = 202
+cancelBtn.ZIndex = 302
 cancelBtn.Parent = modalBox
 Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
 
@@ -2062,7 +2072,7 @@ confirmCloseBtn.TextColor3 = Color3.new(1, 1, 1)
 confirmCloseBtn.Font = Enum.Font.GothamBold
 confirmCloseBtn.TextSize = 12
 confirmCloseBtn.AutoButtonColor = false
-confirmCloseBtn.ZIndex = 202
+confirmCloseBtn.ZIndex = 302
 confirmCloseBtn.Parent = modalBox
 Instance.new("UICorner", confirmCloseBtn).CornerRadius = UDim.new(0, 8)
 
@@ -2107,8 +2117,8 @@ cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 confirmCloseBtn.MouseButton1Click:Connect(function()
     closeModal.Visible = false
     main.Visible = false
-    capsule.Visible = true
-    capsuleGlow.Visible = true
+    capsule.Visible = false
+    capsuleGlow.Visible = false
 end)
 
 glowPulse = 0
@@ -2154,13 +2164,15 @@ capsule.InputBegan:Connect(function(input)
     or input.UserInputType == Enum.UserInputType.Touch then
         if isOnDragIcon(input.Position) then
             capsuleDragActive = true
-            capsuleMoved = false
+            capsuleMoved = true
             capsuleDragStart = input.Position
             capsuleStartPos = capsule.Position
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     capsuleDragActive = false
+                    task.wait(0.15)
+                    capsuleMoved = false
                 end
             end)
         end
@@ -2170,12 +2182,10 @@ end)
 RunService.RenderStepped:Connect(function()
     if capsuleDragActive and capsuleDragStart then
         local delta = UIS:GetMouseLocation() - capsuleDragStart
-        if math.abs(delta.X) > 3 or math.abs(delta.Y) > 3 then
-            capsuleMoved = true
-        end
-        local newX = capsuleStartPos.X.Offset + delta.X
-        local newY = capsuleStartPos.Y.Offset + delta.Y
-        capsule.Position = UDim2.new(capsuleStartPos.X.Scale, newX, capsuleStartPos.Y.Scale, newY)
+        capsule.Position = UDim2.new(
+            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
+            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+        )
     end
 end)
 
@@ -2232,6 +2242,14 @@ capsule.MouseButton1Click:Connect(function()
         capsuleMoved = false
         return
     end
+
+    local mousePos = UIS:GetMouseLocation()
+    local abs = dragIcon.AbsolutePosition
+    local sz = dragIcon.AbsoluteSize
+    local onCross = mousePos.X >= abs.X and mousePos.X <= abs.X + sz.X
+                and mousePos.Y >= abs.Y and mousePos.Y <= abs.Y + sz.Y
+    if onCross then return end
+
     capsule.Visible = false
     capsuleGlow.Visible = false
     main.Visible = true
