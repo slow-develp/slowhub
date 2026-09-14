@@ -456,6 +456,16 @@ local function trackPlayer(plr)
     createESP(plr)
     createHitbox(plr)
 end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    trackPlayer(plr)
+end
+
+Players.PlayerAdded:Connect(trackPlayer)
+Players.PlayerRemoving:Connect(function(plr)
+    destroyESP(plr)
+    hitboxData[plr] = nil
+end)
 noclipConn = nil
 local function setNoclip(state)
     if noclipConn then noclipConn:Disconnect() noclipConn = nil end
@@ -527,7 +537,6 @@ local function startFly()
 
     hum.PlatformStand = true
 
-    -- Camada 1: BodyVelocity + BodyGyro
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
     flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
@@ -543,7 +552,6 @@ local function startFly()
     flyBodyGyro.CFrame = hrp.CFrame
     flyBodyGyro.Parent = hrp
 
-    -- Camada 2: LinearVelocity + AlignOrientation
     pcall(function()
         flyAttachment = Instance.new("Attachment")
         flyAttachment.Name = "SlowHub_FlyAttach"
@@ -590,12 +598,10 @@ local function startFly()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
 
-        -- Re-força PlatformStand se o jogo resetar
         if hum and not hum.PlatformStand then
             hum.PlatformStand = true
         end
 
-        -- Re-cria BodyVelocity se for deletado
         if not flyBodyVel or not flyBodyVel.Parent then
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
@@ -604,7 +610,6 @@ local function startFly()
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
-        -- Re-cria BodyGyro se for deletado
         if not flyBodyGyro or not flyBodyGyro.Parent then
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
@@ -839,10 +844,10 @@ MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 -- ═══════════ CÁPSULA IDÊNTICA AO PEPIGUZMAN ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
-capsule.Size = UDim2.new(0, 220, 0, 32)
-capsule.Position = UDim2.new(0.5, -110, 0, 14)
-capsule.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
-capsule.BackgroundTransparency = 0.05
+capsule.Size = UDim2.new(0, 240, 0, 30)
+capsule.Position = UDim2.new(0.5, -120, 0, 15)
+capsule.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+capsule.BackgroundTransparency = 0
 capsule.BorderSizePixel = 0
 capsule.Active = true
 capsule.Visible = false
@@ -851,44 +856,52 @@ capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
 local capsuleStroke = Instance.new("UIStroke", capsule)
-capsuleStroke.Color = PURPLE_BORDER
+capsuleStroke.Color = Color3.fromRGB(55, 55, 65)
 capsuleStroke.Thickness = 1
-capsuleStroke.Transparency = 0.1
+capsuleStroke.Transparency = 0.2
 
--- Ícone circular escuro à ESQUERDA
+-- ═══ ZONA DA SETA (esquerda) — sem círculo ═══
 dragIcon = Instance.new("Frame")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 24, 0, 24)
-dragIcon.Position = UDim2.new(0, 4, 0.5, -12)
-dragIcon.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+dragIcon.Size = UDim2.new(0, 30, 1, 0)
+dragIcon.Position = UDim2.new(0, 0, 0, 0)
+dragIcon.BackgroundTransparency = 1
 dragIcon.BorderSizePixel = 0
-dragIcon.ZIndex = 6
+dragIcon.ZIndex = 8
 dragIcon.Parent = capsule
-Instance.new("UICorner", dragIcon).CornerRadius = UDim.new(1, 0)
 
 local dragImg = Instance.new("ImageLabel")
-dragImg.Size = UDim2.new(0, 14, 0, 14)
-dragImg.Position = UDim2.new(0.5, -7, 0.5, -7)
+dragImg.Size = UDim2.new(0, 16, 0, 16)
+dragImg.Position = UDim2.new(0.5, -8, 0.5, -8)
 dragImg.BackgroundTransparency = 1
 dragImg.Image = "rbxassetid://79111374854903"
 dragImg.ImageColor3 = Color3.fromRGB(200, 200, 210)
-dragImg.ZIndex = 7
+dragImg.ZIndex = 9
 dragImg.Parent = dragIcon
 
--- Texto centralizado
+-- ═══ LINHA SEPARADORA ═══
+local divider = Instance.new("Frame")
+divider.Name = "Divider"
+divider.Size = UDim2.new(0, 1, 0, 18)
+divider.Position = UDim2.new(0, 30, 0.5, -9)
+divider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+divider.BackgroundTransparency = 0.2
+divider.BorderSizePixel = 0
+divider.ZIndex = 6
+divider.Parent = capsule
+
+-- ═══ TEXTO ═══
 capsuleText = Instance.new("TextLabel")
-capsuleText.Size = UDim2.new(1, -70, 1, 0)
-capsuleText.Position = UDim2.new(0, 40, 0, 0)
+capsuleText.Size = UDim2.new(1, -60, 1, 0)
+capsuleText.Position = UDim2.new(0, 30, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
 capsuleText.TextColor3 = Color3.fromRGB(240, 240, 250)
-capsuleText.Font = Enum.Font.GothamBold
+capsuleText.Font = Enum.Font.GothamMedium
 capsuleText.TextSize = 13
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
-
--- (Glow removido — Pepi não tem)
 
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
@@ -1954,7 +1967,7 @@ hbSizeCard = makeCard(hitboxPage, 94, 32)
 makeLabel(hbSizeCard, "Tamanho", 10, 150)
 hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
     local n = tonumber(txt)
-    if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
+        if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
 end)
 hbSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
@@ -2296,57 +2309,77 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ========== DRAG CÁPSULA (arrasta a barra INTEIRA — estilo Pepi) ==========
+-- ═══════════ DRAG CÁPSULA (UIS global — idêntico Pepi) ═══════════
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
+capsuleDownTime = 0
+capsuleWasOnDragZone = false
 
-local function startDrag(input)
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-    capsuleDragActive = true
-    capsuleDragStart = input.Position
-    capsuleStartPos = capsule.Position
-
-    input.Changed:Connect(function()
-        if input.UserInputState == Enum.UserInputState.End then
-            capsuleDragActive = false
-        end
-    end)
+-- Checa se o mouse está na ZONA DA SETA (primeiros 30px)
+local function isMouseOnDragZone()
+    local abs = capsule.AbsolutePosition
+    local sz = capsule.AbsoluteSize
+    local mx = UIS:GetMouseLocation().X
+    local my = UIS:GetMouseLocation().Y
+    return mx >= abs.X and mx <= abs.X + 30
+       and my >= abs.Y and my <= abs.Y + sz.Y
 end
 
-capsule.InputBegan:Connect(startDrag)
-dragIcon.InputBegan:Connect(startDrag)
-capsuleText.InputBegan:Connect(startDrag)
+-- Checa se o mouse está em QUALQUER parte da cápsula
+local function isMouseOnCapsule()
+    local abs = capsule.AbsolutePosition
+    local sz = capsule.AbsoluteSize
+    local mx = UIS:GetMouseLocation().X
+    local my = UIS:GetMouseLocation().Y
+    return mx >= abs.X and mx <= abs.X + sz.X
+       and my >= abs.Y and my <= abs.Y + sz.Y
+end
 
-RunService.RenderStepped:Connect(function()
-    if capsuleDragActive and capsuleDragStart then
-        local delta = UIS:GetMouseLocation() - capsuleDragStart
-        capsule.Position = UDim2.new(
-            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
-            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
-        )
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    if not capsule.Visible then return end
+    if not isMouseOnCapsule() then return end
+
+    capsuleWasOnDragZone = isMouseOnDragZone()
+    capsuleDownTime = tick()
+
+    if capsuleWasOnDragZone then
+        capsuleDragActive = true
+        capsuleDragStart = UIS:GetMouseLocation()
+        capsuleStartPos = capsule.Position
     end
 end)
 
--- Abrir painel: clicar em qualquer parte MENOS a cruz
-capsule.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        task.wait(0.05)
-        if not capsuleDragActive then
-            local m = UIS:GetMouseLocation()
-            local abs = dragIcon.AbsolutePosition
-            local sz = dragIcon.AbsoluteSize
-            local onCross = m.X >= abs.X and m.X <= abs.X + sz.X
-                        and m.Y >= abs.Y and m.Y <= abs.Y + sz.Y
-            if not onCross then
-                capsule.Visible = false
-                main.Visible = true
-            end
-        end
+UIS.InputChanged:Connect(function(input)
+    if not capsuleDragActive then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+    local delta = UIS:GetMouseLocation() - capsuleDragStart
+    capsule.Position = UDim2.new(
+        capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
+        capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+    )
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    if not capsule.Visible then return end
+
+    local wasOnDragZone = capsuleWasOnDragZone
+    capsuleDragActive = false
+
+    -- Se clicou FORA da zona da seta e soltou rápido = abre painel
+    if not wasOnDragZone and (tick() - capsuleDownTime) < 0.5 then
+        capsule.Visible = false
+        main.Visible = true
     end
+
+    capsuleWasOnDragZone = false
 end)
 
 -- ========== DRAG MAIN (pelo header) ==========
