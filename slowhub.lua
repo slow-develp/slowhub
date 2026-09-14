@@ -642,9 +642,13 @@ local function setAntiAFK(state)
     if not state then return end
     if LocalPlayer and LocalPlayer.Idled then
         antiAfkConn = LocalPlayer.Idled:Connect(function()
-            local vu = game:GetService("VirtualUser")
-            vu:CaptureController()
-            vu:ClickButton2(Vector2.new())
+            pcall(function()
+                local vu = game:GetService("VirtualUser")
+                if vu then
+                    vu:CaptureController()
+                    vu:ClickButton2(Vector2.new())
+                end
+            end)
         end)
     end
 end
