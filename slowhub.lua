@@ -1,7 +1,3 @@
-print("========================================")
-print("[SlowHub] INICIANDO SCRIPT")
-print("========================================")
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -13,7 +9,6 @@ local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
--- ========== PARENT GUI SEGURO ==========
 local parentGui = CoreGui
 pcall(function()
     if type(gethui) == "function" then
@@ -44,7 +39,6 @@ pcall(function()
     end
 end)
 
--- ========== CORES ==========
 local BG = Color3.fromRGB(16, 16, 20)
 local PANEL = Color3.fromRGB(28, 28, 34)
 local CARD = Color3.fromRGB(38, 38, 46)
@@ -56,11 +50,11 @@ local DANGER = Color3.fromRGB(230, 80, 90)
 local STROKE = Color3.fromRGB(90, 90, 100)
 local PURPLE_BORDER = Color3.fromRGB(130, 70, 220)
 
--- ========== CONSTANTES ==========
 local KEY = "SlowHubVIP"
 local DISCORD_LINK = "https://discord.com/users/tav.x"
 local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
-local ICONS = {
+
+ICONS = {
     Home = "rbxassetid://111637692403997",
     Person = "rbxassetid://118410078119588",
     Eye = "rbxassetid://7546367582",
@@ -73,12 +67,11 @@ local ICONS = {
     Aimbot = "rbxassetid://87867532553953",
 }
 
-local rowCache = {}
-local originalLighting = {}
-local welcomeShown = false
+rowCache = {}
+originalLighting = {}
+welcomeShown = false
 
--- ========== CONFIG ==========
-local Config = {
+Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(150,90,240), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false},
     Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(150,90,240), FOVSize=150, Target="Head", TeamCheck=false, Smoothness=0.15, AutoShot=false},
     Hitbox = {Enabled=false, Size=3, Color=Color3.fromRGB(150,90,240), ShowBox=false},
@@ -91,10 +84,6 @@ local Config = {
     AntiFling = {Enabled=false},
     AntiAFK = {Enabled=false}
 }
-
-print("[SlowHub] ✓ Parte 1 OK")
-
--- ========== HELPERS ==========
 local function safeChar(plr)
     if not plr or not plr.Parent then return nil, nil, nil end
     local char = plr.Character
@@ -121,13 +110,12 @@ local function isValidTarget(plr, teamcheck)
     return true
 end
 
--- ========== ESP ==========
-local espFolder = Instance.new("Folder")
+espFolder = Instance.new("Folder")
 espFolder.Name = "SlowHub_ESP"
 espFolder.Parent = parentGui
 
-local espData = {}
-local highlightAvailable = pcall(function()
+espData = {}
+highlightAvailable = pcall(function()
     local h = Instance.new("Highlight")
     h:Destroy()
 end)
@@ -315,8 +303,7 @@ local function updateESP()
     end
 end
 
--- ========== FOV / AIMBOT ==========
-local fovFrame = Instance.new("Frame")
+fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
 fovFrame.BackgroundTransparency = 1
 fovFrame.BorderSizePixel = 0
@@ -324,7 +311,7 @@ fovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 fovFrame.Visible = false
 fovFrame.ZIndex = 4
 fovFrame.Parent = parentGui
-local fovStroke = Instance.new("UIStroke", fovFrame)
+fovStroke = Instance.new("UIStroke", fovFrame)
 fovStroke.Color = Config.Aimbot.FOVColor
 fovStroke.Thickness = 1.5
 fovStroke.Transparency = 0.2
@@ -337,14 +324,14 @@ local function updateFOV()
     end
     fovFrame.Visible = true
     fovFrame.Size = UDim2.new(0, Config.Aimbot.FOVSize * 2, 0, Config.Aimbot.FOVSize * 2)
-    local vp = Camera.ViewportSize
+    local vp = Camera and Camera.ViewportSize or Vector2.new(1920, 1080)
     fovFrame.Position = UDim2.new(0, vp.X / 2, 0, vp.Y / 2)
     fovStroke.Color = Config.Aimbot.FOVColor
 end
 
 local function getClosest()
     local closest, closestDist = nil, math.huge
-    local vp = Camera.ViewportSize
+    local vp = Camera and Camera.ViewportSize or Vector2.new(1920, 1080)
     local center = Vector2.new(vp.X / 2, vp.Y / 2)
     for _, plr in ipairs(Players:GetPlayers()) do
         if isValidTarget(plr, Config.Aimbot.TeamCheck) then
@@ -367,7 +354,7 @@ local function getClosest()
     return closest
 end
 
-local aimbotActive = false
+aimbotActive = false
 local function startAimbot()
     if aimbotActive then return end
     aimbotActive = true
@@ -389,11 +376,10 @@ local function startAimbot()
     end)
 end
 
--- ========== HITBOX (só quadro visual) ==========
-local hitboxFolder = Instance.new("Folder")
+hitboxFolder = Instance.new("Folder")
 hitboxFolder.Name = "SlowHub_Hitbox"
 hitboxFolder.Parent = parentGui
-local hitboxData = {}
+hitboxData = {}
 
 local function createHitbox(plr)
     if hitboxData[plr] then return end
@@ -456,11 +442,7 @@ Players.PlayerRemoving:Connect(function(plr)
     destroyESP(plr)
     hitboxData[plr] = nil
 end)
-
-print("[SlowHub] ✓ Parte 2 OK")
-
--- ========== MOVIMENTO ==========
-local noclipConn
+noclipConn = nil
 local function setNoclip(state)
     if noclipConn then noclipConn:Disconnect() noclipConn = nil end
     if not state then return end
@@ -475,7 +457,7 @@ local function setNoclip(state)
     end)
 end
 
-local speedConn
+speedConn = nil
 local function setSpeed(state)
     if speedConn then speedConn:Disconnect() speedConn = nil end
     local char = LocalPlayer.Character
@@ -493,11 +475,12 @@ local function setSpeed(state)
     end
 end
 
-local flyConn
-local flyBodyVel, flyBodyGyro
-local flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
-local flyInputConn
-local flyInputEndConn
+flyConn = nil
+flyBodyVel = nil
+flyBodyGyro = nil
+flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
+flyInputConn = nil
+flyInputEndConn = nil
 
 local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
@@ -580,7 +563,7 @@ local function setFly(state)
     if state then startFly() else stopFly() end
 end
 
-local infJumpConn
+infJumpConn = nil
 local function setInfJump(state)
     if infJumpConn then infJumpConn:Disconnect() infJumpConn = nil end
     if not state then return end
@@ -627,7 +610,7 @@ local function setFOVChanger(state)
     end
 end
 
-local antiFlingConn
+antiFlingConn = nil
 local function setAntiFling(state)
     if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
     if not state then return end
@@ -643,7 +626,7 @@ local function setAntiFling(state)
     end)
 end
 
-local antiAfkConn
+antiAfkConn = nil
 local function setAntiAFK(state)
     if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
     if not state then return end
@@ -660,7 +643,7 @@ local function setAntiAFK(state)
     end
 end
 
-local savedPositions = {}
+savedPositions = {}
 
 local function savePosition(slot)
     local char = LocalPlayer.Character
@@ -691,7 +674,6 @@ local function gotoPlayer(plr)
     return true
 end
 
--- ========== AUTO-REJOIN (roda o script no próximo servidor) ==========
 local function queueScriptOnTeleport()
     local code = 'loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()'
     local queued = false
@@ -720,7 +702,10 @@ local function serverHop()
     task.spawn(function()
         task.wait(0.3)
         local ok, servers = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+            if not game.HttpGet then return nil end
+            local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+            if not raw then return nil end
+            return HttpService:JSONDecode(raw)
         end)
         if not ok or not servers or not servers.data then return end
         local currentJob = game.JobId
@@ -735,7 +720,6 @@ local function serverHop()
     end)
 end
 
--- ========== LOOP PRINCIPAL ==========
 RunService.RenderStepped:Connect(function()
     if type(updateESP) == "function" then pcall(updateESP) end
     if type(updateFOV) == "function" then pcall(updateFOV) end
@@ -745,7 +729,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== DISCORD ==========
 local function openDiscord()
     pcall(function()
         if setclipboard then
@@ -755,11 +738,7 @@ local function openDiscord()
         end
     end)
 end
-
-print("[SlowHub] ✓ Parte 3 OK")
-
--- ========== GUI PRINCIPAL ==========
-local gui = Instance.new("ScreenGui")
+gui = Instance.new("ScreenGui")
 gui.Name = "SlowHub"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
@@ -767,14 +746,13 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 gui.Parent = parentGui
 
-local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
-local maxW = math.min(900, viewport.X * 0.95)
-local maxH = math.min(540, viewport.Y * 0.85)
-local NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
-local MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
+viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+maxW = math.min(900, viewport.X * 0.95)
+maxH = math.min(540, viewport.Y * 0.85)
+NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
+MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ========== CÁPSULA ==========
-local capsuleGlow = Instance.new("Frame")
+capsuleGlow = Instance.new("Frame")
 capsuleGlow.Name = "CapsuleGlow"
 capsuleGlow.Size = UDim2.new(0, 232, 0, 48)
 capsuleGlow.Position = UDim2.new(0.5, -116, 0, 6)
@@ -786,7 +764,7 @@ capsuleGlow.Visible = false
 capsuleGlow.Parent = gui
 Instance.new("UICorner", capsuleGlow).CornerRadius = UDim.new(1, 0)
 
-local capsule = Instance.new("TextButton")
+capsule = Instance.new("TextButton")
 capsule.Name = "Capsule"
 capsule.Size = UDim2.new(0, 220, 0, 36)
 capsule.Position = UDim2.new(0.5, -110, 0, 12)
@@ -800,7 +778,7 @@ capsule.ZIndex = 5
 capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
-local capsuleGradient = Instance.new("UIGradient", capsule)
+capsuleGradient = Instance.new("UIGradient", capsule)
 capsuleGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 20, 60)),
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 12, 25)),
@@ -808,12 +786,12 @@ capsuleGradient.Color = ColorSequence.new({
 })
 capsuleGradient.Rotation = 0
 
-local capsuleStroke = Instance.new("UIStroke", capsule)
+capsuleStroke = Instance.new("UIStroke", capsule)
 capsuleStroke.Color = PURPLE_BORDER
 capsuleStroke.Thickness = 2
 capsuleStroke.Transparency = 0.1
 
-local dragIcon = Instance.new("ImageLabel")
+dragIcon = Instance.new("ImageLabel")
 dragIcon.Name = "DragIcon"
 dragIcon.Size = UDim2.new(0, 22, 0, 22)
 dragIcon.Position = UDim2.new(0, 8, 0.5, -11)
@@ -823,7 +801,7 @@ dragIcon.ImageColor3 = Color3.fromRGB(200, 200, 210)
 dragIcon.ZIndex = 6
 dragIcon.Parent = capsule
 
-local statusDot = Instance.new("Frame")
+statusDot = Instance.new("Frame")
 statusDot.Size = UDim2.new(0, 8, 0, 8)
 statusDot.Position = UDim2.new(1, -16, 0.5, -4)
 statusDot.BackgroundColor3 = SUCCESS
@@ -832,7 +810,7 @@ statusDot.ZIndex = 6
 statusDot.Parent = capsule
 Instance.new("UICorner", statusDot).CornerRadius = UDim.new(1, 0)
 
-local capsuleText = Instance.new("TextLabel")
+capsuleText = Instance.new("TextLabel")
 capsuleText.Size = UDim2.new(1, -70, 1, 0)
 capsuleText.Position = UDim2.new(0, 38, 0, 0)
 capsuleText.BackgroundTransparency = 1
@@ -846,8 +824,7 @@ capsuleText.TextStrokeColor3 = PURPLE_BORDER
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
 
--- ========== KEY GUI ==========
-local keyGui = Instance.new("ScreenGui")
+keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
 keyGui.ResetOnSpawn = false
 keyGui.IgnoreGuiInset = true
@@ -855,7 +832,7 @@ keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 keyGui.DisplayOrder = 10000
 keyGui.Parent = parentGui
 
-local keyFrame = Instance.new("Frame")
+keyFrame = Instance.new("Frame")
 keyFrame.Size = UDim2.new(0, 400, 0, 300)
 keyFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
 keyFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
@@ -865,12 +842,12 @@ keyFrame.Active = true
 keyFrame.Parent = keyGui
 Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 24)
 
-local keyStroke = Instance.new("UIStroke", keyFrame)
+keyStroke = Instance.new("UIStroke", keyFrame)
 keyStroke.Color = PURPLE_BORDER
 keyStroke.Thickness = 1.5
 keyStroke.Transparency = 0.2
 
-local keyTitle = Instance.new("TextLabel")
+keyTitle = Instance.new("TextLabel")
 keyTitle.Size = UDim2.new(1, -32, 0, 30)
 keyTitle.Position = UDim2.new(0, 16, 0, 22)
 keyTitle.BackgroundTransparency = 1
@@ -881,7 +858,7 @@ keyTitle.TextSize = 20
 keyTitle.TextXAlignment = Enum.TextXAlignment.Left
 keyTitle.Parent = keyFrame
 
-local keySub = Instance.new("TextLabel")
+keySub = Instance.new("TextLabel")
 keySub.Size = UDim2.new(1, -32, 0, 20)
 keySub.Position = UDim2.new(0, 16, 0, 54)
 keySub.BackgroundTransparency = 1
@@ -892,14 +869,14 @@ keySub.TextSize = 12
 keySub.TextXAlignment = Enum.TextXAlignment.Left
 keySub.Parent = keyFrame
 
-local keyLine = Instance.new("Frame")
+keyLine = Instance.new("Frame")
 keyLine.Size = UDim2.new(1, -32, 0, 1)
 keyLine.Position = UDim2.new(0, 16, 0, 84)
 keyLine.BackgroundColor3 = STROKE
 keyLine.BorderSizePixel = 0
 keyLine.Parent = keyFrame
 
-local keyInfo = Instance.new("TextLabel")
+keyInfo = Instance.new("TextLabel")
 keyInfo.Size = UDim2.new(1, -32, 0, 40)
 keyInfo.Position = UDim2.new(0, 16, 0, 96)
 keyInfo.BackgroundTransparency = 1
@@ -912,7 +889,7 @@ keyInfo.TextYAlignment = Enum.TextYAlignment.Top
 keyInfo.TextWrapped = true
 keyInfo.Parent = keyFrame
 
-local keyInput = Instance.new("TextBox")
+keyInput = Instance.new("TextBox")
 keyInput.Size = UDim2.new(1, -32, 0, 40)
 keyInput.Position = UDim2.new(0, 16, 0, 138)
 keyInput.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
@@ -927,7 +904,7 @@ keyInput.ClearTextOnFocus = false
 keyInput.Parent = keyFrame
 Instance.new("UICorner", keyInput).CornerRadius = UDim.new(0, 8)
 
-local discordBtn = Instance.new("TextButton")
+discordBtn = Instance.new("TextButton")
 discordBtn.Size = UDim2.new(1, -32, 0, 36)
 discordBtn.Position = UDim2.new(0, 16, 0, 188)
 discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
@@ -939,7 +916,7 @@ discordBtn.AutoButtonColor = false
 discordBtn.Parent = keyFrame
 Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0, 8)
 
-local submitBtn = Instance.new("TextButton")
+submitBtn = Instance.new("TextButton")
 submitBtn.Size = UDim2.new(1, -32, 0, 38)
 submitBtn.Position = UDim2.new(0, 16, 1, -56)
 submitBtn.BackgroundColor3 = ACCENT
@@ -951,7 +928,7 @@ submitBtn.AutoButtonColor = false
 submitBtn.Parent = keyFrame
 Instance.new("UICorner", submitBtn).CornerRadius = UDim.new(0, 8)
 
-local keyStatus = Instance.new("TextLabel")
+keyStatus = Instance.new("TextLabel")
 keyStatus.Size = UDim2.new(1, -32, 0, 16)
 keyStatus.Position = UDim2.new(0, 16, 1, -74)
 keyStatus.BackgroundTransparency = 1
@@ -964,8 +941,7 @@ keyStatus.Parent = keyFrame
 
 discordBtn.MouseButton1Click:Connect(openDiscord)
 
--- ========== PAINEL PRINCIPAL ==========
-local main = Instance.new("Frame")
+main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = NORMAL_SIZE
 main.Position = UDim2.new(0.5, -250, 0.5, -170)
@@ -978,12 +954,12 @@ main.Visible = false
 main.Parent = gui
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 24)
 
-local mainStroke = Instance.new("UIStroke", main)
+mainStroke = Instance.new("UIStroke", main)
 mainStroke.Color = PURPLE_BORDER
 mainStroke.Thickness = 1.5
 mainStroke.Transparency = 0.2
 
-local starContainer = Instance.new("Frame")
+starContainer = Instance.new("Frame")
 starContainer.Size = UDim2.new(1, 0, 1, 0)
 starContainer.BackgroundColor3 = Color3.fromRGB(6, 4, 15)
 starContainer.BackgroundTransparency = 0.15
@@ -993,7 +969,7 @@ starContainer.ZIndex = 1
 starContainer.Parent = main
 Instance.new("UICorner", starContainer).CornerRadius = UDim.new(0, 24)
 
-local stars = {}
+stars = {}
 for i = 1, 60 do
     local size = math.random(1, 3)
     local star = Instance.new("Frame")
@@ -1008,7 +984,7 @@ for i = 1, 60 do
     stars[i] = {frame = star, speed = math.random(30, 90) / 100000}
 end
 
-local starOverlay = Instance.new("Frame")
+starOverlay = Instance.new("Frame")
 starOverlay.Size = UDim2.new(1, 0, 1, 0)
 starOverlay.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
 starOverlay.BackgroundTransparency = 0.6
@@ -1033,12 +1009,11 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- ========== HEADER / FOOTER / SIDEBAR ==========
-local HEADER_H = 36
-local SIDEBAR_W = 140
-local FOOTER_H = 42
+HEADER_H = 36
+SIDEBAR_W = 140
+FOOTER_H = 42
 
-local header = Instance.new("Frame")
+header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, HEADER_H)
 header.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
 header.BackgroundTransparency = 0.1
@@ -1048,7 +1023,7 @@ header.ZIndex = 10
 header.Parent = main
 Instance.new("UICorner", header).CornerRadius = UDim.new(0, 24)
 
-local headerFix = Instance.new("Frame")
+headerFix = Instance.new("Frame")
 headerFix.Size = UDim2.new(1, 0, 0, 20)
 headerFix.Position = UDim2.new(0, 0, 1, -20)
 headerFix.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
@@ -1057,12 +1032,12 @@ headerFix.BorderSizePixel = 0
 headerFix.ZIndex = 10
 headerFix.Parent = header
 
-local headerStroke = Instance.new("UIStroke", header)
+headerStroke = Instance.new("UIStroke", header)
 headerStroke.Color = PURPLE_BORDER
 headerStroke.Thickness = 1
 headerStroke.Transparency = 0.2
 
-local titleLbl = Instance.new("TextLabel")
+titleLbl = Instance.new("TextLabel")
 titleLbl.Size = UDim2.new(1, -180, 1, 0)
 titleLbl.Position = UDim2.new(0, 80, 0, 0)
 titleLbl.BackgroundTransparency = 1
@@ -1074,7 +1049,7 @@ titleLbl.TextXAlignment = Enum.TextXAlignment.Center
 titleLbl.ZIndex = 11
 titleLbl.Parent = header
 
-local minBtn = Instance.new("TextButton")
+minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 26, 0, 26)
 minBtn.Position = UDim2.new(1, -88, 0.5, -13)
 minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -1084,7 +1059,7 @@ minBtn.ZIndex = 11
 minBtn.Parent = header
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
-local minIcon = Instance.new("ImageLabel")
+minIcon = Instance.new("ImageLabel")
 minIcon.Size = UDim2.new(0, 16, 0, 16)
 minIcon.Position = UDim2.new(0.5, -8, 0.5, -8)
 minIcon.BackgroundTransparency = 1
@@ -1093,7 +1068,7 @@ minIcon.ImageColor3 = TEXT
 minIcon.ZIndex = 12
 minIcon.Parent = minBtn
 
-local maxBtn = Instance.new("TextButton")
+maxBtn = Instance.new("TextButton")
 maxBtn.Size = UDim2.new(0, 26, 0, 26)
 maxBtn.Position = UDim2.new(1, -58, 0.5, -13)
 maxBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -1103,7 +1078,7 @@ maxBtn.ZIndex = 11
 maxBtn.Parent = header
 Instance.new("UICorner", maxBtn).CornerRadius = UDim.new(0, 6)
 
-local maxIcon = Instance.new("ImageLabel")
+maxIcon = Instance.new("ImageLabel")
 maxIcon.Size = UDim2.new(0, 16, 0, 16)
 maxIcon.Position = UDim2.new(0.5, -8, 0.5, -8)
 maxIcon.BackgroundTransparency = 1
@@ -1112,7 +1087,7 @@ maxIcon.ImageColor3 = TEXT
 maxIcon.ZIndex = 12
 maxIcon.Parent = maxBtn
 
-local closeBtn = Instance.new("TextButton")
+closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 26, 0, 26)
 closeBtn.Position = UDim2.new(1, -28, 0.5, -13)
 closeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -1122,7 +1097,7 @@ closeBtn.ZIndex = 11
 closeBtn.Parent = header
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
-local closeIcon = Instance.new("ImageLabel")
+closeIcon = Instance.new("ImageLabel")
 closeIcon.Size = UDim2.new(0, 16, 0, 16)
 closeIcon.Position = UDim2.new(0.5, -8, 0.5, -8)
 closeIcon.BackgroundTransparency = 1
@@ -1131,8 +1106,7 @@ closeIcon.ImageColor3 = TEXT
 closeIcon.ZIndex = 12
 closeIcon.Parent = closeBtn
 
--- ========== FOOTER ==========
-local footer = Instance.new("Frame")
+footer = Instance.new("Frame")
 footer.Size = UDim2.new(1, 0, 0, FOOTER_H)
 footer.Position = UDim2.new(0, 0, 1, -FOOTER_H)
 footer.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
@@ -1142,7 +1116,7 @@ footer.ZIndex = 50
 footer.Parent = main
 Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 24)
 
-local footerFix = Instance.new("Frame")
+footerFix = Instance.new("Frame")
 footerFix.Size = UDim2.new(1, 0, 0, 20)
 footerFix.Position = UDim2.new(0, 0, 0, 0)
 footerFix.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
@@ -1151,7 +1125,7 @@ footerFix.BorderSizePixel = 0
 footerFix.ZIndex = 51
 footerFix.Parent = footer
 
-local footerAvatar = Instance.new("ImageLabel")
+footerAvatar = Instance.new("ImageLabel")
 footerAvatar.Size = UDim2.new(0, 26, 0, 26)
 footerAvatar.Position = UDim2.new(0, 10, 0.5, -13)
 footerAvatar.BackgroundColor3 = CARD
@@ -1161,7 +1135,7 @@ footerAvatar.ZIndex = 51
 footerAvatar.Parent = footer
 Instance.new("UICorner", footerAvatar).CornerRadius = UDim.new(1, 0)
 
-local footerName = Instance.new("TextLabel")
+footerName = Instance.new("TextLabel")
 footerName.Size = UDim2.new(1, -60, 0, 14)
 footerName.Position = UDim2.new(0, 44, 0, 6)
 footerName.BackgroundTransparency = 1
@@ -1173,7 +1147,7 @@ footerName.TextXAlignment = Enum.TextXAlignment.Left
 footerName.ZIndex = 51
 footerName.Parent = footer
 
-local footerUser = Instance.new("TextLabel")
+footerUser = Instance.new("TextLabel")
 footerUser.Size = UDim2.new(1, -60, 0, 12)
 footerUser.Position = UDim2.new(0, 44, 0, 21)
 footerUser.BackgroundTransparency = 1
@@ -1185,8 +1159,7 @@ footerUser.TextXAlignment = Enum.TextXAlignment.Left
 footerUser.ZIndex = 51
 footerUser.Parent = footer
 
--- ========== SIDEBAR ==========
-local sidebarHolder = Instance.new("Frame")
+sidebarHolder = Instance.new("Frame")
 sidebarHolder.Size = UDim2.new(0, SIDEBAR_W, 1, -(HEADER_H + FOOTER_H + 24))
 sidebarHolder.Position = UDim2.new(0, 0, 0, HEADER_H)
 sidebarHolder.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
@@ -1195,7 +1168,7 @@ sidebarHolder.BorderSizePixel = 0
 sidebarHolder.ZIndex = 10
 sidebarHolder.Parent = main
 
-local sidebarScroll = Instance.new("ScrollingFrame")
+sidebarScroll = Instance.new("ScrollingFrame")
 sidebarScroll.Size = UDim2.new(1, 0, 1, 0)
 sidebarScroll.BackgroundTransparency = 1
 sidebarScroll.BorderSizePixel = 0
@@ -1206,25 +1179,25 @@ sidebarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 sidebarScroll.ZIndex = 10
 sidebarScroll.Parent = sidebarHolder
 
-local sidebarLayout = Instance.new("UIListLayout", sidebarScroll)
+sidebarLayout = Instance.new("UIListLayout", sidebarScroll)
 sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 sidebarLayout.Padding = UDim.new(0, 2)
 
-local sidebarPad = Instance.new("UIPadding", sidebarScroll)
+sidebarPad = Instance.new("UIPadding", sidebarScroll)
 sidebarPad.PaddingTop = UDim.new(0, 6)
 sidebarPad.PaddingBottom = UDim.new(0, 6)
 sidebarPad.PaddingLeft = UDim.new(0, 6)
 sidebarPad.PaddingRight = UDim.new(0, 6)
 
-local content = Instance.new("Frame")
+content = Instance.new("Frame")
 content.Size = UDim2.new(1, -SIDEBAR_W, 1, -(HEADER_H + FOOTER_H))
 content.Position = UDim2.new(0, SIDEBAR_W, 0, HEADER_H)
 content.BackgroundTransparency = 1
 content.ZIndex = 10
 content.Parent = main
 
-local pages = {}
-local buttons = {}
+pages = {}
+buttons = {}
 
 local function setPage(name)
     for n, page in pairs(pages) do
@@ -1327,10 +1300,6 @@ local function addPageTitle(page, text, subtext)
         sub.Parent = page
     end
 end
-
-print("[SlowHub] ✓ Parte 4 OK")
-
--- ========== HELPERS UI ==========
 local function makeCard(parent, y, h)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, -24, 0, h or 32)
@@ -1427,7 +1396,6 @@ local function makeInput(parent, y, placeholder, w, callback)
     return box
 end
 
--- ========== NOTIFICAÇÕES ==========
 local function addNotif(title, desc, duration)
     duration = duration or 4
     local notif = Instance.new("Frame")
@@ -1518,12 +1486,11 @@ local function addNotif(title, desc, duration)
     task.delay(duration, dismiss)
 end
 
--- ========== HOME ==========
-local homePage = createPage("Home")
+homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
 
-local welcomeCard = makeCard(homePage, 56, 70)
-local welcomeLbl = Instance.new("TextLabel")
+welcomeCard = makeCard(homePage, 56, 70)
+welcomeLbl = Instance.new("TextLabel")
 welcomeLbl.Size = UDim2.new(1, -20, 0, 24)
 welcomeLbl.Position = UDim2.new(0, 10, 0, 10)
 welcomeLbl.BackgroundTransparency = 1
@@ -1535,7 +1502,7 @@ welcomeLbl.TextXAlignment = Enum.TextXAlignment.Left
 welcomeLbl.ZIndex = 13
 welcomeLbl.Parent = welcomeCard
 
-local creditLbl = Instance.new("TextLabel")
+creditLbl = Instance.new("TextLabel")
 creditLbl.Size = UDim2.new(1, -20, 0, 16)
 creditLbl.Position = UDim2.new(0, 10, 0, 36)
 creditLbl.BackgroundTransparency = 1
@@ -1547,14 +1514,13 @@ creditLbl.TextXAlignment = Enum.TextXAlignment.Left
 creditLbl.ZIndex = 13
 creditLbl.Parent = welcomeCard
 
-local infoCard = makeCard(homePage, 136, 32)
+infoCard = makeCard(homePage, 136, 32)
 makeLabel(infoCard, "Use o menu lateral para acessar as funções.", 10, 380)
 
--- ========== JOGADORES ==========
-local playersPage = createPage("Jogadores")
+playersPage = createPage("Jogadores")
 addPageTitle(playersPage, "Jogadores", "Lista de jogadores no servidor")
 
-local searchBar = Instance.new("Frame")
+searchBar = Instance.new("Frame")
 searchBar.Size = UDim2.new(1, -24, 0, 30)
 searchBar.Position = UDim2.new(0, 12, 0, 50)
 searchBar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
@@ -1564,7 +1530,7 @@ searchBar.ZIndex = 12
 searchBar.Parent = playersPage
 Instance.new("UICorner", searchBar).CornerRadius = UDim.new(0, 8)
 
-local searchIcon = Instance.new("ImageLabel")
+searchIcon = Instance.new("ImageLabel")
 searchIcon.Size = UDim2.new(0, 14, 0, 14)
 searchIcon.Position = UDim2.new(0, 8, 0.5, -7)
 searchIcon.BackgroundTransparency = 1
@@ -1573,7 +1539,7 @@ searchIcon.ImageColor3 = TEXTDIM
 searchIcon.ZIndex = 13
 searchIcon.Parent = searchBar
 
-local searchBox = Instance.new("TextBox")
+searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -30, 1, 0)
 searchBox.Position = UDim2.new(0, 28, 0, 0)
 searchBox.BackgroundTransparency = 1
@@ -1588,7 +1554,7 @@ searchBox.ClearTextOnFocus = false
 searchBox.ZIndex = 13
 searchBox.Parent = searchBar
 
-local playerScroll = Instance.new("ScrollingFrame")
+playerScroll = Instance.new("ScrollingFrame")
 playerScroll.Size = UDim2.new(1, -24, 1, -90)
 playerScroll.Position = UDim2.new(0, 12, 0, 86)
 playerScroll.BackgroundTransparency = 1
@@ -1600,17 +1566,17 @@ playerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 playerScroll.ZIndex = 12
 playerScroll.Parent = playersPage
 
-local playerLayout = Instance.new("UIListLayout", playerScroll)
+playerLayout = Instance.new("UIListLayout", playerScroll)
 playerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playerLayout.Padding = UDim.new(0, 4)
 
-local playerPad = Instance.new("UIPadding", playerScroll)
+playerPad = Instance.new("UIPadding", playerScroll)
 playerPad.PaddingTop = UDim.new(0, 2)
 playerPad.PaddingBottom = UDim.new(0, 6)
 playerPad.PaddingLeft = UDim.new(0, 2)
 playerPad.PaddingRight = UDim.new(0, 2)
 
-local playerCards = {}
+playerCards = {}
 
 local function createPlayerCard(plr, order)
     local card = Instance.new("Frame")
@@ -1725,20 +1691,19 @@ Players.PlayerRemoving:Connect(function(plr)
     playerCards[plr.UserId] = nil
 end)
 
--- ========== MOVIMENTO ==========
-local movementPage = createPage("Movimento")
+movementPage = createPage("Movimento")
 addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
 
-local noclipCard = makeCard(movementPage, 56, 32)
+noclipCard = makeCard(movementPage, 56, 32)
 makeLabel(noclipCard, "Noclip", 10, 200)
 makeToggle(noclipCard, false, function(s)
     Config.Noclip.Enabled = s
     setNoclip(s)
 end)
 
-local speedCard = makeCard(movementPage, 94, 32)
+speedCard = makeCard(movementPage, 94, 32)
 makeLabel(speedCard, "Speed", 10, 150)
-local speedInput = makeInput(speedCard, 6, tostring(Config.Speed.Value), 50, function(txt)
+speedInput = makeInput(speedCard, 6, tostring(Config.Speed.Value), 50, function(txt)
     local n = tonumber(txt)
     if n then Config.Speed.Value = math.clamp(n, 16, 200) end
 end)
@@ -1748,25 +1713,24 @@ makeToggle(speedCard, false, function(s)
     setSpeed(s)
 end)
 
-local flyCard = makeCard(movementPage, 132, 32)
+flyCard = makeCard(movementPage, 132, 32)
 makeLabel(flyCard, "Fly ⚠ Pode não funcionar em alguns jogos", 10, 260)
 makeToggle(flyCard, false, function(s)
     Config.Fly.Enabled = s
     setFly(s)
 end)
 
-local jumpCard = makeCard(movementPage, 170, 32)
+jumpCard = makeCard(movementPage, 170, 32)
 makeLabel(jumpCard, "Infinite Jump", 10, 200)
 makeToggle(jumpCard, false, function(s)
     Config.InfiniteJump.Enabled = s
     setInfJump(s)
 end)
 
--- ========== TELEPORTE ==========
-local tpPage = createPage("Teleporte")
+tpPage = createPage("Teleporte")
 addPageTitle(tpPage, "Teleporte", "Salvar / Ir para posição")
 
-local savedList = Instance.new("ScrollingFrame")
+savedList = Instance.new("ScrollingFrame")
 savedList.Size = UDim2.new(1, -24, 1, -120)
 savedList.Position = UDim2.new(0, 12, 0, 50)
 savedList.BackgroundTransparency = 1
@@ -1778,11 +1742,11 @@ savedList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 savedList.ZIndex = 12
 savedList.Parent = tpPage
 
-local savedLayout = Instance.new("UIListLayout", savedList)
+savedLayout = Instance.new("UIListLayout", savedList)
 savedLayout.SortOrder = Enum.SortOrder.LayoutOrder
 savedLayout.Padding = UDim.new(0, 4)
 
-local savedSlots = {}
+savedSlots = {}
 
 local function refreshSavedSlots()
     for _, obj in ipairs(savedList:GetChildren()) do
@@ -1850,7 +1814,7 @@ local function refreshSavedSlots()
     end
 end
 
-local saveBtn = makeButton(tpPage, "💾 Salvar Posição Atual", 0, 180, 28, Color3.fromRGB(35, 35, 42), function()
+saveBtn = makeButton(tpPage, "💾 Salvar Posição Atual", 0, 180, 28, Color3.fromRGB(35, 35, 42), function()
     local nextSlot = 1
     while savedSlots[nextSlot] do nextSlot += 1 end
     if savePosition(nextSlot) then
@@ -1861,162 +1825,146 @@ local saveBtn = makeButton(tpPage, "💾 Salvar Posição Atual", 0, 180, 28, Co
 end)
 saveBtn.Position = UDim2.new(0, 12, 1, -50)
 
--- ========== VISUAL ==========
-local visualPage = createPage("Visual")
+visualPage = createPage("Visual")
 addPageTitle(visualPage, "Visual", "ESP, Fullbright")
 
-local espCard = makeCard(visualPage, 56, 32)
+espCard = makeCard(visualPage, 56, 32)
 makeLabel(espCard, "ESP", 10, 200)
 makeToggle(espCard, false, function(s) Config.ESP.Enabled = s end)
 
-local espNameCard = makeCard(visualPage, 94, 32)
+espNameCard = makeCard(visualPage, 94, 32)
 makeLabel(espNameCard, "ESP • Mostrar Nome", 10, 200)
 makeToggle(espNameCard, false, function(s) Config.ESP.ShowName = s end)
 
-local espDistCard = makeCard(visualPage, 132, 32)
+espDistCard = makeCard(visualPage, 132, 32)
 makeLabel(espDistCard, "ESP • Mostrar Distância", 10, 200)
 makeToggle(espDistCard, false, function(s) Config.ESP.ShowDistance = s end)
 
-local espHealthCard = makeCard(visualPage, 170, 32)
+espHealthCard = makeCard(visualPage, 170, 32)
 makeLabel(espHealthCard, "ESP • Mostrar Vida", 10, 200)
 makeToggle(espHealthCard, false, function(s) Config.ESP.ShowHealth = s end)
 
-local espHLCard = makeCard(visualPage, 208, 32)
+espHLCard = makeCard(visualPage, 208, 32)
 makeLabel(espHLCard, "ESP • Highlight", 10, 200)
 makeToggle(espHLCard, false, function(s) Config.ESP.ShowHighlight = s end)
 
-local espTMCard = makeCard(visualPage, 246, 32)
+espTMCard = makeCard(visualPage, 246, 32)
 makeLabel(espTMCard, "ESP • TeamCheck", 10, 200)
 makeToggle(espTMCard, false, function(s) Config.ESP.TeamCheck = s end)
 
-local fbCard = makeCard(visualPage, 284, 32)
+fbCard = makeCard(visualPage, 284, 32)
 makeLabel(fbCard, "Fullbright", 10, 200)
 makeToggle(fbCard, false, function(s)
     Config.Fullbright.Enabled = s
     setFullbright(s)
 end)
 
--- ========== HITBOX ==========
-local hitboxPage = createPage("Hitbox")
+hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
-local hbCard = makeCard(hitboxPage, 56, 32)
+hbCard = makeCard(hitboxPage, 56, 32)
 makeLabel(hbCard, "Hitbox Expander", 10, 200)
 makeToggle(hbCard, false, function(s)
     Config.Hitbox.Enabled = s
 end)
 
-local hbSizeCard = makeCard(hitboxPage, 94, 32)
+hbSizeCard = makeCard(hitboxPage, 94, 32)
 makeLabel(hbSizeCard, "Tamanho", 10, 150)
-local hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
+hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
     local n = tonumber(txt)
     if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
 end)
 hbSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
-local hbShowCard = makeCard(hitboxPage, 132, 32)
+hbShowCard = makeCard(hitboxPage, 132, 32)
 makeLabel(hbShowCard, "Mostrar Quadro Visual", 10, 200)
 makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
--- ========== MIRA ==========
-local miraPage = createPage("Mira")
+miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV")
-
-local aimCard = makeCard(miraPage, 56, 32)
-makeLabel(aimCard, "Aimbot", 10, 200)
-makeToggle(aimCard, false, function(s)
-    Config.Aimbot.Enabled = s
-    if s then startAimbot() end
-end)
-
-local aimShotCard = makeCard(miraPage, 94, 32)
-makeLabel(aimShotCard, "Aimbot • Auto Shot", 10, 200)
 makeToggle(aimShotCard, false, function(s) Config.Aimbot.AutoShot = s end)
 
-local aimTMCard = makeCard(miraPage, 132, 32)
+aimTMCard = makeCard(miraPage, 132, 32)
 makeLabel(aimTMCard, "Aimbot • TeamCheck", 10, 200)
 makeToggle(aimTMCard, false, function(s) Config.Aimbot.TeamCheck = s end)
 
-local aimTargetCard = makeCard(miraPage, 170, 32)
+aimTargetCard = makeCard(miraPage, 170, 32)
 makeLabel(aimTargetCard, "Alvo (Head / Torso)", 10, 150)
-local targetInput = makeInput(aimTargetCard, 6, Config.Aimbot.Target, 70, function(txt)
+targetInput = makeInput(aimTargetCard, 6, Config.Aimbot.Target, 70, function(txt)
     if txt == "Head" or txt == "Torso" then Config.Aimbot.Target = txt end
 end)
 targetInput.Position = UDim2.new(1, -90, 0.5, -12)
 
-local aimSmoothCard = makeCard(miraPage, 208, 32)
+aimSmoothCard = makeCard(miraPage, 208, 32)
 makeLabel(aimSmoothCard, "Suavidade (0.05 - 1)", 10, 150)
-local smoothInput = makeInput(aimSmoothCard, 6, tostring(Config.Aimbot.Smoothness), 60, function(txt)
+smoothInput = makeInput(aimSmoothCard, 6, tostring(Config.Aimbot.Smoothness), 60, function(txt)
     local n = tonumber(txt)
     if n then Config.Aimbot.Smoothness = math.clamp(n, 0.05, 1) end
 end)
 smoothInput.Position = UDim2.new(1, -80, 0.5, -12)
 
-local fovCard = makeCard(miraPage, 246, 32)
+fovCard = makeCard(miraPage, 246, 32)
 makeLabel(fovCard, "FOV Circle", 10, 200)
 makeToggle(fovCard, false, function(s) Config.Aimbot.FOVEnabled = s end)
 
-local fovSizeCard = makeCard(miraPage, 284, 32)
+fovSizeCard = makeCard(miraPage, 284, 32)
 makeLabel(fovSizeCard, "Tamanho FOV", 10, 150)
-local fovSizeInput = makeInput(fovSizeCard, 6, tostring(Config.Aimbot.FOVSize), 50, function(txt)
+fovSizeInput = makeInput(fovSizeCard, 6, tostring(Config.Aimbot.FOVSize), 50, function(txt)
     local n = tonumber(txt)
     if n then Config.Aimbot.FOVSize = math.clamp(n, 20, 500) end
 end)
 fovSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
-local fovChangeCard = makeCard(miraPage, 322, 32)
+fovChangeCard = makeCard(miraPage, 322, 32)
 makeLabel(fovChangeCard, "FOV Changer", 10, 200)
 makeToggle(fovChangeCard, false, function(s)
     Config.FOVChanger.Enabled = s
     setFOVChanger(s)
 end)
 
--- ========== ANTI ==========
-local antiPage = createPage("Anti")
+antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
 
-local afCard = makeCard(antiPage, 56, 32)
+afCard = makeCard(antiPage, 56, 32)
 makeLabel(afCard, "Anti-Fling", 10, 200)
 makeToggle(afCard, false, function(s)
     Config.AntiFling.Enabled = s
     setAntiFling(s)
 end)
 
-local afkCard = makeCard(antiPage, 94, 32)
+afkCard = makeCard(antiPage, 94, 32)
 makeLabel(afkCard, "Anti-AFK", 10, 200)
 makeToggle(afkCard, false, function(s)
     Config.AntiAFK.Enabled = s
     setAntiAFK(s)
 end)
 
--- ========== SERVIDOR ==========
-local serverPage = createPage("Servidor")
+serverPage = createPage("Servidor")
 addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
 
-local rejoinCard = makeCard(serverPage, 56, 40)
+rejoinCard = makeCard(serverPage, 56, 40)
 makeLabel(rejoinCard, "Rejoin (entrar de novo)", 10, 200)
-local rejoinBtn = makeButton(rejoinCard, "Rejoin", 7, 80, 26, ACCENT, function()
+rejoinBtn = makeButton(rejoinCard, "Rejoin", 7, 80, 26, ACCENT, function()
     addNotif("Servidor", "Rejoinando... Script vai reabrir!")
     rejoin()
 end)
 rejoinBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
-local hopCard = makeCard(serverPage, 102, 40)
+hopCard = makeCard(serverPage, 102, 40)
 makeLabel(hopCard, "Server Hop", 10, 200)
-local hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
+hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
     addNotif("Servidor", "Procurando servidor... Script vai reabrir!")
     serverHop()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
--- ========== SOBRE ==========
-local aboutPage = createPage("Sobre")
+aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações")
 
-local aboutCard = makeCard(aboutPage, 56, 120)
-local aboutLbl = Instance.new("TextLabel")
+aboutCard = makeCard(aboutPage, 56, 120)
+aboutLbl = Instance.new("TextLabel")
 aboutLbl.Size = UDim2.new(1, -20, 1, -20)
 aboutLbl.Position = UDim2.new(0, 10, 0, 10)
 aboutLbl.BackgroundTransparency = 1
@@ -2030,7 +1978,6 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 13
 aboutLbl.Parent = aboutCard
 
--- ========== CRIA ABAS ==========
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2044,10 +1991,7 @@ createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
 
-print("[SlowHub] ✓ Parte 5 OK")
-
--- ========== MODAL CLOSE ==========
-local closeModal = Instance.new("Frame")
+closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
 closeModal.Size = UDim2.new(1, 0, 1, 0)
 closeModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -2057,7 +2001,7 @@ closeModal.Visible = false
 closeModal.ZIndex = 200
 closeModal.Parent = gui
 
-local modalBox = Instance.new("Frame")
+modalBox = Instance.new("Frame")
 modalBox.Size = UDim2.new(0, 320, 0, 160)
 modalBox.Position = UDim2.new(0.5, -160, 0.5, -80)
 modalBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
@@ -2066,12 +2010,12 @@ modalBox.ZIndex = 201
 modalBox.Parent = closeModal
 Instance.new("UICorner", modalBox).CornerRadius = UDim.new(0, 16)
 
-local modalStroke = Instance.new("UIStroke", modalBox)
+modalStroke = Instance.new("UIStroke", modalBox)
 modalStroke.Color = PURPLE_BORDER
 modalStroke.Thickness = 1.5
 modalStroke.Transparency = 0.2
 
-local modalTitle = Instance.new("TextLabel")
+modalTitle = Instance.new("TextLabel")
 modalTitle.Size = UDim2.new(1, -32, 0, 24)
 modalTitle.Position = UDim2.new(0, 16, 0, 20)
 modalTitle.BackgroundTransparency = 1
@@ -2083,7 +2027,7 @@ modalTitle.TextXAlignment = Enum.TextXAlignment.Left
 modalTitle.ZIndex = 202
 modalTitle.Parent = modalBox
 
-local modalDesc = Instance.new("TextLabel")
+modalDesc = Instance.new("TextLabel")
 modalDesc.Size = UDim2.new(1, -32, 0, 40)
 modalDesc.Position = UDim2.new(0, 16, 0, 48)
 modalDesc.BackgroundTransparency = 1
@@ -2096,7 +2040,7 @@ modalDesc.TextWrapped = true
 modalDesc.ZIndex = 202
 modalDesc.Parent = modalBox
 
-local cancelBtn = Instance.new("TextButton")
+cancelBtn = Instance.new("TextButton")
 cancelBtn.Size = UDim2.new(0, 130, 0, 32)
 cancelBtn.Position = UDim2.new(0, 16, 1, -48)
 cancelBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -2109,7 +2053,7 @@ cancelBtn.ZIndex = 202
 cancelBtn.Parent = modalBox
 Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
 
-local confirmCloseBtn = Instance.new("TextButton")
+confirmCloseBtn = Instance.new("TextButton")
 confirmCloseBtn.Size = UDim2.new(0, 130, 0, 32)
 confirmCloseBtn.Position = UDim2.new(1, -146, 1, -48)
 confirmCloseBtn.BackgroundColor3 = ACCENT
@@ -2167,10 +2111,9 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     capsuleGlow.Visible = true
 end)
 
--- ========== GLOW PULSANTE ==========
-local glowPulse = 0
-local glowDir = 1
-local glowAccum = 0
+glowPulse = 0
+glowDir = 1
+glowAccum = 0
 
 RunService.RenderStepped:Connect(function(dt)
     if not capsule or not capsuleGlow then return end
@@ -2194,11 +2137,10 @@ RunService.RenderStepped:Connect(function(dt)
     )
 end)
 
--- ========== DRAG CÁPSULA ==========
-local capsuleDragActive = false
-local capsuleDragStart = nil
-local capsuleStartPos = nil
-local capsuleMoved = false
+capsuleDragActive = false
+capsuleDragStart = nil
+capsuleStartPos = nil
+capsuleMoved = false
 
 local function isOnDragIcon(inputPos)
     local abs = dragIcon.AbsolutePosition
@@ -2237,10 +2179,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== DRAG MAIN ==========
-local mainDragging = false
-local mainDragStart = nil
-local mainStartPos = nil
+mainDragging = false
+mainDragStart = nil
+mainStartPos = nil
 
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -2267,8 +2208,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== BOTÕES HEADER ==========
-local isMaximized = false
+isMaximized = false
 
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
@@ -2297,7 +2237,6 @@ capsule.MouseButton1Click:Connect(function()
     main.Visible = true
 end)
 
--- ========== VALIDAÇÃO DE KEY ==========
 local function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == KEY then
@@ -2327,10 +2266,9 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ========== DRAG KEY ==========
-local keyDragging = false
-local keyDragStart = nil
-local keyStartPos = nil
+keyDragging = false
+keyDragStart = nil
+keyStartPos = nil
 
 keyFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -2357,12 +2295,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== BOOT FINAL ==========
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
 capsule.Visible = false
 capsuleGlow.Visible = false
 main.Visible = false
-
-print("[SlowHub] ✓ Parte 6 OK — BOOT COMPLETO")
