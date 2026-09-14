@@ -55,8 +55,7 @@ local PURPLE_BORDER = Color3.fromRGB(130, 70, 220)
 -- ========== CONSTANTES ==========
 local KEY = "SlowHubVIP"
 local DISCORD_LINK = "https://discord.com/users/tav.x"
-local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/Slow-Hub-Universal.lua"
-
+local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
 local ICONS = {
     Home = "rbxassetid://111637692403997",
     Person = "rbxassetid://118410078119588",
