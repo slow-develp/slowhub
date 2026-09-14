@@ -746,9 +746,9 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 gui.Parent = parentGui
 
-viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
-maxW = math.min(900, viewport.X * 0.95)
-maxH = math.min(540, viewport.Y * 0.85)
+local vpSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+local maxW = math.min(900, vpSize.X * 0.85)
+local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
@@ -1727,11 +1727,12 @@ makeToggle(jumpCard, false, function(s)
     setInfJump(s)
 end)
 
+-- ========== TELEPORTE (com Reset e Remover) ==========
 tpPage = createPage("Teleporte")
-addPageTitle(tpPage, "Teleporte", "Salvar / Ir para posição")
+addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
 
 savedList = Instance.new("ScrollingFrame")
-savedList.Size = UDim2.new(1, -24, 1, -120)
+savedList.Size = UDim2.new(1, -24, 1, -170)
 savedList.Position = UDim2.new(0, 12, 0, 50)
 savedList.BackgroundTransparency = 1
 savedList.BorderSizePixel = 0
@@ -1809,12 +1810,14 @@ local function refreshSavedSlots()
         Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
         delBtn.MouseButton1Click:Connect(function()
             savedSlots[i] = nil
+            savedPositions[i] = nil
             refreshSavedSlots()
+            addNotif("Teleporte", "Slot " .. i .. " removido.")
         end)
     end
 end
 
-saveBtn = makeButton(tpPage, "💾 Salvar Posição Atual", 0, 180, 28, Color3.fromRGB(35, 35, 42), function()
+saveBtn = makeButton(tpPage, "💾 Salvar Posição", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
     local nextSlot = 1
     while savedSlots[nextSlot] do nextSlot += 1 end
     if savePosition(nextSlot) then
@@ -1823,8 +1826,22 @@ saveBtn = makeButton(tpPage, "💾 Salvar Posição Atual", 0, 180, 28, Color3.f
         addNotif("Teleporte", "Posição salva no slot " .. nextSlot)
     end
 end)
-saveBtn.Position = UDim2.new(0, 12, 1, -50)
+saveBtn.Position = UDim2.new(0, 12, 1, -108)
 
+resetBtn = makeButton(tpPage, "🔄 Resetar Todos", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
+    savedSlots = {}
+    savedPositions = {}
+    refreshSavedSlots()
+    addNotif("Teleporte", "Todos os slots foram resetados.")
+end)
+resetBtn.Position = UDim2.new(0, 12, 1, -76)
+
+removeHint = makeButton(tpPage, "🗑️ Remover Slot (X)", 0, 155, 26, Color3.fromRGB(60, 25, 30), function()
+    addNotif("Remover Slot", "Clique no X vermelho ao lado do slot.")
+end)
+removeHint.Position = UDim2.new(0, 12, 1, -44)
+
+-- ========== VISUAL ==========
 visualPage = createPage("Visual")
 addPageTitle(visualPage, "Visual", "ESP, Fullbright")
 
@@ -1859,6 +1876,7 @@ makeToggle(fbCard, false, function(s)
     setFullbright(s)
 end)
 
+-- ========== HITBOX ==========
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
@@ -1882,6 +1900,7 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
+-- ========== MIRA ==========
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV")
 
@@ -1934,6 +1953,7 @@ makeToggle(fovChangeCard, false, function(s)
     setFOVChanger(s)
 end)
 
+-- ========== ANTI ==========
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
 
@@ -1951,6 +1971,7 @@ makeToggle(afkCard, false, function(s)
     setAntiAFK(s)
 end)
 
+-- ========== SERVIDOR ==========
 serverPage = createPage("Servidor")
 addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
 
@@ -1970,6 +1991,7 @@ hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
+-- ========== SOBRE ==========
 aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações")
 
@@ -1988,6 +2010,7 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
+-- ========== CRIA ABAS ==========
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2041,7 +2064,7 @@ modalDesc = Instance.new("TextLabel")
 modalDesc.Size = UDim2.new(1, -32, 0, 40)
 modalDesc.Position = UDim2.new(0, 16, 0, 48)
 modalDesc.BackgroundTransparency = 1
-modalDesc.Text = "Are you sure you want to close the panel?"
+modalDesc.Text = "Are you sure? All features will be disabled."
 modalDesc.TextColor3 = TEXTDIM
 modalDesc.Font = Enum.Font.Gotham
 modalDesc.TextSize = 12
@@ -2114,13 +2137,98 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
+-- ========== RESET GERAL ==========
+local function resetEverything()
+    for section, data in pairs(Config) do
+        if type(data) == "table" and data.Enabled ~= nil then
+            data.Enabled = false
+        end
+    end
+
+    if espData then
+        for _, d in pairs(espData) do
+            if d.Box then d.Box.Visible = false end
+            if d.Name then d.Name.Visible = false end
+            if d.Dist then d.Dist.Visible = false end
+            if d.HpBg then d.HpBg.Visible = false end
+            if d.HL then d.HL.Enabled = false end
+        end
+    end
+
+    if hitboxData then
+        for _, d in pairs(hitboxData) do
+            if d.Frame then d.Frame.Visible = false end
+        end
+    end
+
+    if noclipConn then
+        pcall(function() noclipConn:Disconnect() end)
+        noclipConn = nil
+    end
+
+    if speedConn then
+        pcall(function() speedConn:Disconnect() end)
+        speedConn = nil
+    end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = 16 end
+
+    pcall(function()
+        if flyConn then flyConn:Disconnect() flyConn = nil end
+        if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
+        if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
+        if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+        if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+        flyBodyVel, flyBodyGyro = nil, nil
+        if hum then hum.PlatformStand = false end
+    end)
+
+    if infJumpConn then
+        pcall(function() infJumpConn:Disconnect() end)
+        infJumpConn = nil
+    end
+
+    if originalLighting and originalLighting.Ambient then
+        pcall(function()
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.ClockTime = originalLighting.ClockTime
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end)
+    end
+
+    pcall(function()
+        if Camera then Camera.FieldOfView = 70 end
+    end)
+
+    if antiFlingConn then
+        pcall(function() antiFlingConn:Disconnect() end)
+        antiFlingConn = nil
+    end
+
+    if antiAfkConn then
+        pcall(function() antiAfkConn:Disconnect() end)
+        antiAfkConn = nil
+    end
+
+    if fovFrame then fovFrame.Visible = false end
+
+    aimbotActive = false
+end
+
 confirmCloseBtn.MouseButton1Click:Connect(function()
+    resetEverything()
     closeModal.Visible = false
     main.Visible = false
     capsule.Visible = false
     capsuleGlow.Visible = false
+    addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
+-- ========== GLOW PULSANTE ==========
 glowPulse = 0
 glowDir = 1
 glowAccum = 0
@@ -2147,6 +2255,7 @@ RunService.RenderStepped:Connect(function(dt)
     )
 end)
 
+-- ========== DRAG CÁPSULA (só pela cruz) ==========
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
@@ -2171,8 +2280,9 @@ capsule.InputBegan:Connect(function(input)
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     capsuleDragActive = false
-                    task.wait(0.15)
-                    capsuleMoved = false
+                    task.delay(0.15, function()
+                        capsuleMoved = false
+                    end)
                 end
             end)
         end
@@ -2181,7 +2291,8 @@ end)
 
 RunService.RenderStepped:Connect(function()
     if capsuleDragActive and capsuleDragStart then
-        local delta = UIS:GetMouseLocation() - capsuleDragStart
+        local mousePos = UIS:GetMouseLocation()
+        local delta = mousePos - capsuleDragStart
         capsule.Position = UDim2.new(
             capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
             capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
@@ -2189,6 +2300,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ========== DRAG MAIN (pelo header) ==========
 mainDragging = false
 mainDragStart = nil
 mainStartPos = nil
@@ -2218,6 +2330,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ========== BOTÕES HEADER ==========
 isMaximized = false
 
 minBtn.MouseButton1Click:Connect(function()
@@ -2228,9 +2341,13 @@ end)
 
 maxBtn.MouseButton1Click:Connect(function()
     isMaximized = not isMaximized
-    TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        Size = isMaximized and MAXIMIZED_SIZE or NORMAL_SIZE
-    }):Play()
+    if isMaximized then
+        main.Size = MAXIMIZED_SIZE
+        main.Position = UDim2.new(0.5, -maxW/2, 0.5, -maxH/2)
+    else
+        main.Size = NORMAL_SIZE
+        main.Position = UDim2.new(0.5, -250, 0.5, -170)
+    end
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -2255,6 +2372,7 @@ capsule.MouseButton1Click:Connect(function()
     main.Visible = true
 end)
 
+-- ========== VALIDAÇÃO KEY ==========
 local function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == KEY then
@@ -2284,6 +2402,7 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
+-- ========== DRAG KEY ==========
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
@@ -2313,6 +2432,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ========== BOOT FINAL ==========
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
