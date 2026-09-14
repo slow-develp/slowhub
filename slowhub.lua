@@ -1,3 +1,7 @@
+print("========================================")
+print("[SlowHub] INICIANDO SCRIPT")
+print("========================================")
+
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -87,6 +91,8 @@ local Config = {
     AntiFling = {Enabled=false},
     AntiAFK = {Enabled=false}
 }
+
+print("[SlowHub] ✓ Parte 1 OK")
 
 -- ========== HELPERS ==========
 local function safeChar(plr)
@@ -451,6 +457,8 @@ Players.PlayerRemoving:Connect(function(plr)
     hitboxData[plr] = nil
 end)
 
+print("[SlowHub] ✓ Parte 2 OK")
+
 -- ========== MOVIMENTO ==========
 local noclipConn
 local function setNoclip(state)
@@ -747,6 +755,8 @@ local function openDiscord()
         end
     end)
 end
+
+print("[SlowHub] ✓ Parte 3 OK")
 
 -- ========== GUI PRINCIPAL ==========
 local gui = Instance.new("ScreenGui")
@@ -1317,6 +1327,8 @@ local function addPageTitle(page, text, subtext)
         sub.Parent = page
     end
 end
+
+print("[SlowHub] ✓ Parte 4 OK")
 
 -- ========== HELPERS UI ==========
 local function makeCard(parent, y, h)
@@ -2032,6 +2044,8 @@ createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
 
+print("[SlowHub] ✓ Parte 5 OK")
+
 -- ========== MODAL CLOSE ==========
 local closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
@@ -2350,3 +2364,5 @@ keyFrame.Visible = true
 capsule.Visible = false
 capsuleGlow.Visible = false
 main.Visible = false
+
+print("[SlowHub] ✓ Parte 6 OK — BOOT COMPLETO")
