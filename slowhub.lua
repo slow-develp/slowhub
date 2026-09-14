@@ -456,16 +456,6 @@ local function trackPlayer(plr)
     createESP(plr)
     createHitbox(plr)
 end
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    trackPlayer(plr)
-end
-
-Players.PlayerAdded:Connect(trackPlayer)
-Players.PlayerRemoving:Connect(function(plr)
-    destroyESP(plr)
-    hitboxData[plr] = nil
-end)
 noclipConn = nil
 local function setNoclip(state)
     if noclipConn then noclipConn:Disconnect() noclipConn = nil end
@@ -502,6 +492,9 @@ end
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
+flyLinVel = nil
+flyAlign = nil
+flyAttachment = nil
 flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
 flyInputConn = nil
 flyInputEndConn = nil
@@ -510,9 +503,16 @@ local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
     if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
+
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+    if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
+    if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
+    if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
+
     flyBodyVel, flyBodyGyro = nil, nil
+    flyLinVel, flyAlign, flyAttachment = nil, nil, nil
+
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum.PlatformStand = false end
@@ -527,19 +527,44 @@ local function startFly()
 
     hum.PlatformStand = true
 
+    -- Camada 1: BodyVelocity + BodyGyro
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
-    flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    flyBodyVel.P = 1e5
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
-    flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    flyBodyGyro.P = 1000
-    flyBodyGyro.D = 50
+    flyBodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    flyBodyGyro.P = 1e5
+    flyBodyGyro.D = 100
     flyBodyGyro.CFrame = hrp.CFrame
     flyBodyGyro.Parent = hrp
+
+    -- Camada 2: LinearVelocity + AlignOrientation
+    pcall(function()
+        flyAttachment = Instance.new("Attachment")
+        flyAttachment.Name = "SlowHub_FlyAttach"
+        flyAttachment.Parent = hrp
+
+        flyLinVel = Instance.new("LinearVelocity")
+        flyLinVel.Name = "SlowHub_LinVel"
+        flyLinVel.MaxForce = math.huge
+        flyLinVel.VectorVelocity = Vector3.zero
+        flyLinVel.RelativeTo = Enum.ActuatorRelativeTo.World
+        flyLinVel.Attachment0 = flyAttachment
+        flyLinVel.Parent = hrp
+
+        flyAlign = Instance.new("AlignOrientation")
+        flyAlign.Name = "SlowHub_Align"
+        flyAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment
+        flyAlign.Attachment0 = flyAttachment
+        flyAlign.MaxTorque = math.huge
+        flyAlign.Responsiveness = 200
+        flyAlign.Parent = hrp
+    end)
 
     flyInputConn = UIS.InputBegan:Connect(function(input, gp)
         if gp then return end
@@ -564,6 +589,31 @@ local function startFly()
     flyConn = RunService.RenderStepped:Connect(function()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
+
+        -- Re-força PlatformStand se o jogo resetar
+        if hum and not hum.PlatformStand then
+            hum.PlatformStand = true
+        end
+
+        -- Re-cria BodyVelocity se for deletado
+        if not flyBodyVel or not flyBodyVel.Parent then
+            flyBodyVel = Instance.new("BodyVelocity")
+            flyBodyVel.Name = "SlowHub_FlyVel"
+            flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+            flyBodyVel.P = 1e5
+            flyBodyVel.Velocity = Vector3.zero
+            flyBodyVel.Parent = hrp
+        end
+        -- Re-cria BodyGyro se for deletado
+        if not flyBodyGyro or not flyBodyGyro.Parent then
+            flyBodyGyro = Instance.new("BodyGyro")
+            flyBodyGyro.Name = "SlowHub_FlyGyro"
+            flyBodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+            flyBodyGyro.P = 1e5
+            flyBodyGyro.D = 100
+            flyBodyGyro.Parent = hrp
+        end
+
         local cam = Camera.CFrame
         local move = Vector3.zero
 
@@ -580,6 +630,10 @@ local function startFly()
 
         flyBodyVel.Velocity = move
         flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
+
+        if flyLinVel and flyLinVel.Parent then
+            flyLinVel.VectorVelocity = move
+        end
     end)
 end
 
@@ -782,97 +836,59 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ CÁPSULA ESTILO PEPIGUZMAN ═══════════
-capsuleGlow = Instance.new("Frame")
-capsuleGlow.Name = "CapsuleGlow"
-capsuleGlow.Size = UDim2.new(0, 240, 0, 44)
-capsuleGlow.Position = UDim2.new(0.5, -120, 0, 8)
-capsuleGlow.BackgroundColor3 = PURPLE_BORDER
-capsuleGlow.BackgroundTransparency = 0.65
-capsuleGlow.BorderSizePixel = 0
-capsuleGlow.ZIndex = 1
-capsuleGlow.Visible = false
-capsuleGlow.Parent = gui
-Instance.new("UICorner", capsuleGlow).CornerRadius = UDim.new(1, 0)
-
-capsule = Instance.new("TextButton")
+-- ═══════════ CÁPSULA IDÊNTICA AO PEPIGUZMAN ═══════════
+capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
-capsule.Size = UDim2.new(0, 220, 0, 34)
-capsule.Position = UDim2.new(0.5, -110, 0, 13)
-capsule.BackgroundColor3 = Color3.fromRGB(10, 8, 16)
-capsule.BackgroundTransparency = 0.15
-capsule.Text = ""
-capsule.AutoButtonColor = false
+capsule.Size = UDim2.new(0, 220, 0, 32)
+capsule.Position = UDim2.new(0.5, -110, 0, 14)
+capsule.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+capsule.BackgroundTransparency = 0.05
+capsule.BorderSizePixel = 0
 capsule.Active = true
 capsule.Visible = false
 capsule.ZIndex = 5
 capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
-capsuleStroke = Instance.new("UIStroke", capsule)
+local capsuleStroke = Instance.new("UIStroke", capsule)
 capsuleStroke.Color = PURPLE_BORDER
-capsuleStroke.Thickness = 1.2
+capsuleStroke.Thickness = 1
 capsuleStroke.Transparency = 0.1
 
-capsuleGradient = Instance.new("UIGradient", capsule)
-capsuleGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 10, 22)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 20, 50)),
-})
-capsuleGradient.Rotation = 0
-
--- 🔥 Ícone circular da ESQUERDA (drag)
-dragIcon = Instance.new("TextButton")
+-- Ícone circular escuro à ESQUERDA
+dragIcon = Instance.new("Frame")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 26, 0, 26)
-dragIcon.Position = UDim2.new(0, 4, 0.5, -13)
-dragIcon.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
-dragIcon.BackgroundTransparency = 0.1
-dragIcon.Text = ""
-dragIcon.AutoButtonColor = false
-dragIcon.Active = true
-dragIcon.ZIndex = 10
+dragIcon.Size = UDim2.new(0, 24, 0, 24)
+dragIcon.Position = UDim2.new(0, 4, 0.5, -12)
+dragIcon.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+dragIcon.BorderSizePixel = 0
+dragIcon.ZIndex = 6
 dragIcon.Parent = capsule
 Instance.new("UICorner", dragIcon).CornerRadius = UDim.new(1, 0)
 
-local dragIconStroke = Instance.new("UIStroke", dragIcon)
-dragIconStroke.Color = PURPLE_BORDER
-dragIconStroke.Thickness = 1
-dragIconStroke.Transparency = 0.3
-
 local dragImg = Instance.new("ImageLabel")
-dragImg.Size = UDim2.new(0, 16, 0, 16)
-dragImg.Position = UDim2.new(0.5, -8, 0.5, -8)
+dragImg.Size = UDim2.new(0, 14, 0, 14)
+dragImg.Position = UDim2.new(0.5, -7, 0.5, -7)
 dragImg.BackgroundTransparency = 1
 dragImg.Image = "rbxassetid://79111374854903"
-dragImg.ImageColor3 = Color3.fromRGB(220, 200, 255)
-dragImg.ZIndex = 11
+dragImg.ImageColor3 = Color3.fromRGB(200, 200, 210)
+dragImg.ZIndex = 7
 dragImg.Parent = dragIcon
-
-dragIcon.MouseEnter:Connect(function()
-    TweenService:Create(dragIcon, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(60, 40, 95)
-    }):Play()
-end)
-dragIcon.MouseLeave:Connect(function()
-    TweenService:Create(dragIcon, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(35, 25, 55)
-    }):Play()
-end)
 
 -- Texto centralizado
 capsuleText = Instance.new("TextLabel")
-capsuleText.Size = UDim2.new(1, -60, 1, 0)
-capsuleText.Position = UDim2.new(0, 34, 0, 0)
+capsuleText.Size = UDim2.new(1, -70, 1, 0)
+capsuleText.Position = UDim2.new(0, 40, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
-capsuleText.TextColor3 = TEXT
+capsuleText.TextColor3 = Color3.fromRGB(240, 240, 250)
 capsuleText.Font = Enum.Font.GothamBold
 capsuleText.TextSize = 13
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
+
+-- (Glow removido — Pepi não tem)
 
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
@@ -2185,7 +2201,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- ========== RESET GERAL (desativa todas as funções) ==========
+-- ========== RESET GERAL ==========
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2229,7 +2245,11 @@ local function resetEverything()
         if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
         if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
         if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+        if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
+        if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
+        if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
         flyBodyVel, flyBodyGyro = nil, nil
+        flyLinVel, flyAlign, flyAttachment = nil, nil, nil
         if hum then hum.PlatformStand = false end
     end)
 
@@ -2273,102 +2293,59 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     closeModal.Visible = false
     main.Visible = false
     capsule.Visible = false
-    capsuleGlow.Visible = false
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ========== GLOW PULSANTE ==========
-glowPulse = 0
-glowDir = 1
-glowAccum = 0
-
-RunService.RenderStepped:Connect(function(dt)
-    if not capsule or not capsuleGlow then return end
-    if not capsule.Visible or not capsuleGlow.Visible then return end
-    glowAccum += dt
-    if glowAccum < 0.05 then return end
-    glowAccum = 0
-
-    glowPulse += glowDir * 0.05
-    if glowPulse >= 1 then glowPulse = 1 glowDir = -1 end
-    if glowPulse <= 0 then glowPulse = 0 glowDir = 1 end
-
-    local extra = 8 * glowPulse
-    capsuleGlow.BackgroundTransparency = 0.6 + (0.2 * glowPulse)
-    capsuleGlow.Size = UDim2.new(0, 240 + extra, 0, 44 + extra)
-    capsuleGlow.Position = UDim2.new(
-        capsule.Position.X.Scale,
-        capsule.Position.X.Offset - 10 - (extra / 2),
-        capsule.Position.Y.Scale,
-        capsule.Position.Y.Offset - 5 - (extra / 2)
-    )
-end)
-
-local function setCapsuleVisible(state)
-    capsule.Visible = state
-    capsuleGlow.Visible = state
-end
-
--- ═══════════ DRAG CÁPSULA (UIS.InputBegan global — funciona 100%) ═══════════
+-- ========== DRAG CÁPSULA (arrasta a barra INTEIRA — estilo Pepi) ==========
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
-capsuleMoved = false
 
-local function getMousePos()
-    return UIS:GetMouseLocation()
-end
-
-local function isOnDragIcon()
-    if not dragIcon or not dragIcon.Visible then return false end
-    local m = getMousePos()
-    local abs = dragIcon.AbsolutePosition
-    local sz = dragIcon.AbsoluteSize
-    return m.X >= abs.X and m.X <= abs.X + sz.X
-       and m.Y >= abs.Y and m.Y <= abs.Y + sz.Y
-end
-
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
+local function startDrag(input)
     if input.UserInputType ~= Enum.UserInputType.MouseButton1
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not capsule.Visible then return end
 
-    if isOnDragIcon() then
-        capsuleDragActive = true
-        capsuleMoved = true
-        capsuleDragStart = getMousePos()
-        capsuleStartPos = capsule.Position
+    capsuleDragActive = true
+    capsuleDragStart = input.Position
+    capsuleStartPos = capsule.Position
 
-        task.delay(0.3, function()
-            if not capsuleDragActive then
-                capsuleMoved = false
-            end
-        end)
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        if capsuleDragActive then
+    input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
             capsuleDragActive = false
-            task.delay(0.15, function()
-                capsuleMoved = false
-            end)
         end
-    end
-end)
+    end)
+end
+
+capsule.InputBegan:Connect(startDrag)
+dragIcon.InputBegan:Connect(startDrag)
+capsuleText.InputBegan:Connect(startDrag)
 
 RunService.RenderStepped:Connect(function()
     if capsuleDragActive and capsuleDragStart then
-        local mousePos = getMousePos()
-        local delta = mousePos - capsuleDragStart
-        local newPos = UDim2.new(
+        local delta = UIS:GetMouseLocation() - capsuleDragStart
+        capsule.Position = UDim2.new(
             capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
             capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
         )
-        capsule.Position = newPos
+    end
+end)
+
+-- Abrir painel: clicar em qualquer parte MENOS a cruz
+capsule.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        task.wait(0.05)
+        if not capsuleDragActive then
+            local m = UIS:GetMouseLocation()
+            local abs = dragIcon.AbsolutePosition
+            local sz = dragIcon.AbsoluteSize
+            local onCross = m.X >= abs.X and m.X <= abs.X + sz.X
+                        and m.Y >= abs.Y and m.Y <= abs.Y + sz.Y
+            if not onCross then
+                capsule.Visible = false
+                main.Visible = true
+            end
+        end
     end
 end)
 
@@ -2407,7 +2384,7 @@ isMaximized = false
 
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
-    setCapsuleVisible(true)
+    capsule.Visible = true
 end)
 
 maxBtn.MouseButton1Click:Connect(function()
@@ -2425,15 +2402,6 @@ closeBtn.MouseButton1Click:Connect(function()
     openCloseModal()
 end)
 
-capsule.MouseButton1Click:Connect(function()
-    if capsuleMoved then
-        capsuleMoved = false
-        return
-    end
-    setCapsuleVisible(false)
-    main.Visible = true
-end)
-
 -- ========== VALIDAÇÃO KEY ==========
 local function tryValidateKey()
     local typed = keyInput.Text or ""
@@ -2444,7 +2412,7 @@ local function tryValidateKey()
         keyFrame.Visible = false
         keyGui.Enabled = false
         gui.Enabled = true
-        setCapsuleVisible(true)
+        capsule.Visible = true
         main.Visible = false
         if not welcomeShown then
             welcomeShown = true
@@ -2463,7 +2431,7 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ========== DRAG KEY ==========
+-- ========== DRAG DA TELA DE KEY ==========
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
@@ -2497,5 +2465,5 @@ end)
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
-setCapsuleVisible(false)
+capsule.Visible = false
 main.Visible = false
