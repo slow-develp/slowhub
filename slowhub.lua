@@ -330,7 +330,6 @@ local function updateFOV()
     fovStroke.Color = Config.Aimbot.FOVColor
 end
 
--- 🔥 WALLCHECK: verifica se tem linha de visão até o alvo
 local function hasLineOfSight(char)
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -783,12 +782,13 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
+-- ═══════════ CÁPSULA ESTILO PEPIGUZMAN ═══════════
 capsuleGlow = Instance.new("Frame")
 capsuleGlow.Name = "CapsuleGlow"
-capsuleGlow.Size = UDim2.new(0, 232, 0, 48)
-capsuleGlow.Position = UDim2.new(0.5, -116, 0, 6)
+capsuleGlow.Size = UDim2.new(0, 240, 0, 44)
+capsuleGlow.Position = UDim2.new(0.5, -120, 0, 8)
 capsuleGlow.BackgroundColor3 = PURPLE_BORDER
-capsuleGlow.BackgroundTransparency = 0.75
+capsuleGlow.BackgroundTransparency = 0.65
 capsuleGlow.BorderSizePixel = 0
 capsuleGlow.ZIndex = 1
 capsuleGlow.Visible = false
@@ -797,10 +797,10 @@ Instance.new("UICorner", capsuleGlow).CornerRadius = UDim.new(1, 0)
 
 capsule = Instance.new("TextButton")
 capsule.Name = "Capsule"
-capsule.Size = UDim2.new(0, 220, 0, 36)
-capsule.Position = UDim2.new(0.5, -110, 0, 12)
-capsule.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
-capsule.BackgroundTransparency = 0
+capsule.Size = UDim2.new(0, 220, 0, 34)
+capsule.Position = UDim2.new(0.5, -110, 0, 13)
+capsule.BackgroundColor3 = Color3.fromRGB(10, 8, 16)
+capsule.BackgroundTransparency = 0.15
 capsule.Text = ""
 capsule.AutoButtonColor = false
 capsule.Active = true
@@ -809,60 +809,68 @@ capsule.ZIndex = 5
 capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
+capsuleStroke = Instance.new("UIStroke", capsule)
+capsuleStroke.Color = PURPLE_BORDER
+capsuleStroke.Thickness = 1.2
+capsuleStroke.Transparency = 0.1
+
 capsuleGradient = Instance.new("UIGradient", capsule)
 capsuleGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 20, 60)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 12, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 20, 60)),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 10, 22)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 20, 50)),
 })
 capsuleGradient.Rotation = 0
 
-capsuleStroke = Instance.new("UIStroke", capsule)
-capsuleStroke.Color = PURPLE_BORDER
-capsuleStroke.Thickness = 2
-capsuleStroke.Transparency = 0.1
-
--- dragIcon independente, filho direto do gui (acima da cápsula)
+-- 🔥 Ícone circular da ESQUERDA (drag)
 dragIcon = Instance.new("TextButton")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 30, 0, 30)
-dragIcon.Position = UDim2.new(0.5, -106, 0, 15)
-dragIcon.BackgroundTransparency = 1
+dragIcon.Size = UDim2.new(0, 26, 0, 26)
+dragIcon.Position = UDim2.new(0, 4, 0.5, -13)
+dragIcon.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+dragIcon.BackgroundTransparency = 0.1
 dragIcon.Text = ""
 dragIcon.AutoButtonColor = false
 dragIcon.Active = true
-dragIcon.Visible = false
-dragIcon.ZIndex = 100
-dragIcon.Parent = gui
+dragIcon.ZIndex = 10
+dragIcon.Parent = capsule
+Instance.new("UICorner", dragIcon).CornerRadius = UDim.new(1, 0)
+
+local dragIconStroke = Instance.new("UIStroke", dragIcon)
+dragIconStroke.Color = PURPLE_BORDER
+dragIconStroke.Thickness = 1
+dragIconStroke.Transparency = 0.3
 
 local dragImg = Instance.new("ImageLabel")
-dragImg.Size = UDim2.new(1, 0, 1, 0)
+dragImg.Size = UDim2.new(0, 16, 0, 16)
+dragImg.Position = UDim2.new(0.5, -8, 0.5, -8)
 dragImg.BackgroundTransparency = 1
 dragImg.Image = "rbxassetid://79111374854903"
-dragImg.ImageColor3 = Color3.fromRGB(200, 200, 210)
-dragImg.ZIndex = 101
+dragImg.ImageColor3 = Color3.fromRGB(220, 200, 255)
+dragImg.ZIndex = 11
 dragImg.Parent = dragIcon
 
-statusDot = Instance.new("Frame")
-statusDot.Size = UDim2.new(0, 8, 0, 8)
-statusDot.Position = UDim2.new(1, -16, 0.5, -4)
-statusDot.BackgroundColor3 = SUCCESS
-statusDot.BorderSizePixel = 0
-statusDot.ZIndex = 6
-statusDot.Parent = capsule
-Instance.new("UICorner", statusDot).CornerRadius = UDim.new(1, 0)
+dragIcon.MouseEnter:Connect(function()
+    TweenService:Create(dragIcon, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(60, 40, 95)
+    }):Play()
+end)
+dragIcon.MouseLeave:Connect(function()
+    TweenService:Create(dragIcon, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+    }):Play()
+end)
 
+-- Texto centralizado
 capsuleText = Instance.new("TextLabel")
-capsuleText.Size = UDim2.new(1, -70, 1, 0)
-capsuleText.Position = UDim2.new(0, 38, 0, 0)
+capsuleText.Size = UDim2.new(1, -60, 1, 0)
+capsuleText.Position = UDim2.new(0, 34, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
 capsuleText.TextColor3 = TEXT
-capsuleText.Font = Enum.Font.GothamBlack
-capsuleText.TextSize = 14
+capsuleText.Font = Enum.Font.GothamBold
+capsuleText.TextSize = 13
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
-capsuleText.TextStrokeTransparency = 0.5
-capsuleText.TextStrokeColor3 = PURPLE_BORDER
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
 
@@ -1959,7 +1967,6 @@ aimTMCard = makeCard(miraPage, 132, 32)
 makeLabel(aimTMCard, "Aimbot • TeamCheck", 10, 200)
 makeToggle(aimTMCard, false, function(s) Config.Aimbot.TeamCheck = s end)
 
--- 🔥 NOVO: WallCheck
 aimWCCard = makeCard(miraPage, 170, 32)
 makeLabel(aimWCCard, "Aimbot • WallCheck (só visível)", 10, 240)
 makeToggle(aimWCCard, false, function(s) Config.Aimbot.WallCheck = s end)
@@ -2064,6 +2071,7 @@ createTabButton("Servidor", ICONS.Star)
 createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
+
 closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
 closeModal.Size = UDim2.new(1, 0, 1, 0)
@@ -2177,6 +2185,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
+-- ========== RESET GERAL (desativa todas as funções) ==========
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2265,7 +2274,6 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     capsule.Visible = false
     capsuleGlow.Visible = false
-    dragIcon.Visible = false
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
@@ -2286,23 +2294,22 @@ RunService.RenderStepped:Connect(function(dt)
     if glowPulse <= 0 then glowPulse = 0 glowDir = 1 end
 
     local extra = 8 * glowPulse
-    capsuleGlow.BackgroundTransparency = 0.55 + (0.25 * glowPulse)
-    capsuleGlow.Size = UDim2.new(0, 232 + extra, 0, 48 + extra)
+    capsuleGlow.BackgroundTransparency = 0.6 + (0.2 * glowPulse)
+    capsuleGlow.Size = UDim2.new(0, 240 + extra, 0, 44 + extra)
     capsuleGlow.Position = UDim2.new(
         capsule.Position.X.Scale,
-        capsule.Position.X.Offset - 6 - (extra / 2),
+        capsule.Position.X.Offset - 10 - (extra / 2),
         capsule.Position.Y.Scale,
-        capsule.Position.Y.Offset - 6 - (extra / 2)
+        capsule.Position.Y.Offset - 5 - (extra / 2)
     )
 end)
 
 local function setCapsuleVisible(state)
     capsule.Visible = state
     capsuleGlow.Visible = state
-    dragIcon.Visible = state
 end
 
--- ========== DRAG CÁPSULA (UIS.InputBegan global) ==========
+-- ═══════════ DRAG CÁPSULA (UIS.InputBegan global — funciona 100%) ═══════════
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
@@ -2362,14 +2369,10 @@ RunService.RenderStepped:Connect(function()
             capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
         )
         capsule.Position = newPos
-        dragIcon.Position = UDim2.new(
-            newPos.X.Scale, newPos.X.Offset + 4,
-            newPos.Y.Scale, newPos.Y.Offset + 3
-        )
     end
 end)
 
--- ========== DRAG MAIN ==========
+-- ========== DRAG MAIN (pelo header) ==========
 mainDragging = false
 mainDragStart = nil
 mainStartPos = nil
