@@ -71,10 +71,9 @@ rowCache = {}
 originalLighting = {}
 welcomeShown = false
 
--- 🔥 FIX: Aimbot com FOV 250 e Smoothness 0.25
 Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(150,90,240), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false},
-    Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(150,90,240), FOVSize=250, Target="Head", TeamCheck=false, Smoothness=0.25, AutoShot=false},
+    Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(150,90,240), FOVSize=250, Target="Head", TeamCheck=false, Smoothness=0.25, AutoShot=false, WallCheck=false},
     Hitbox = {Enabled=false, Size=3, Color=Color3.fromRGB(150,90,240), ShowBox=false},
     Noclip = {Enabled=false},
     Speed = {Enabled=false, Value=32},
@@ -304,7 +303,6 @@ local function updateESP()
     end
 end
 
--- 🔥 FIX: FOV com ZIndex 500 e stroke visível
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
 fovFrame.BackgroundTransparency = 1
@@ -332,6 +330,23 @@ local function updateFOV()
     fovStroke.Color = Config.Aimbot.FOVColor
 end
 
+-- 🔥 WALLCHECK: verifica se tem linha de visão até o alvo
+local function hasLineOfSight(char)
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local origin = Camera.CFrame.Position
+    local target = hrp.Position
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {LocalPlayer.Character, char}
+    params.IgnoreWater = true
+
+    local result = workspace:Raycast(origin, target - origin, params)
+    return result == nil
+end
+
 local function getClosest()
     local closest, closestDist = nil, math.huge
     local vp = Camera and Camera.ViewportSize or Vector2.new(1920, 1080)
@@ -340,14 +355,21 @@ local function getClosest()
         if isValidTarget(plr, Config.Aimbot.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
             if (char and hum and hrp) and hum.Health > 0 then
-                local part = (Config.Aimbot.Target == "Head") and char:FindFirstChild("Head") or hrp
-                if part then
-                    local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                    if onScreen then
-                        local screenPos = Vector2.new(pos.X, pos.Y)
-                        local dist = (screenPos - center).Magnitude
-                        if dist <= Config.Aimbot.FOVSize and dist < closestDist then
-                            closest, closestDist = part, dist
+                local passWallCheck = true
+                if Config.Aimbot.WallCheck then
+                    passWallCheck = hasLineOfSight(char)
+                end
+
+                if passWallCheck then
+                    local part = (Config.Aimbot.Target == "Head") and char:FindFirstChild("Head") or hrp
+                    if part then
+                        local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                        if onScreen then
+                            local screenPos = Vector2.new(pos.X, pos.Y)
+                            local dist = (screenPos - center).Magnitude
+                            if dist <= Config.Aimbot.FOVSize and dist < closestDist then
+                                closest, closestDist = part, dist
+                            end
                         end
                     end
                 end
@@ -357,7 +379,6 @@ local function getClosest()
     return closest
 end
 
--- 🔥 FIX: Aimbot com verificação de target.Parent
 aimbotActive = false
 local function startAimbot()
     if aimbotActive then return end
@@ -401,7 +422,6 @@ local function createHitbox(plr)
     hitboxData[plr] = {Frame = frame, Stroke = stroke}
 end
 
--- 🔥 FIX: updateHitboxes mais permissivo
 local function updateHitboxes()
     if not Config.Hitbox.Enabled then
         for _, d in pairs(hitboxData) do
@@ -751,7 +771,6 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 gui.Parent = parentGui
 
--- 🔥 FIX: mover folders e FOV pro `gui` (DisplayOrder alto)
 pcall(function()
     if espFolder then espFolder.Parent = gui end
     if hitboxFolder then hitboxFolder.Parent = gui end
@@ -803,7 +822,7 @@ capsuleStroke.Color = PURPLE_BORDER
 capsuleStroke.Thickness = 2
 capsuleStroke.Transparency = 0.1
 
--- 🔥 FIX: dragIcon INDEPENDENTE (filho direto do gui, acima da cápsula)
+-- dragIcon independente, filho direto do gui (acima da cápsula)
 dragIcon = Instance.new("TextButton")
 dragIcon.Name = "DragIcon"
 dragIcon.Size = UDim2.new(0, 30, 0, 30)
@@ -1900,7 +1919,6 @@ end)
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
--- 🔥 FIX: toggle Hitbox liga ShowBox junto
 hbCard = makeCard(hitboxPage, 56, 32)
 makeLabel(hbCard, "Hitbox Expander", 10, 200)
 makeToggle(hbCard, false, function(s)
@@ -1922,8 +1940,9 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
+-- ========== MIRA (com WallCheck) ==========
 miraPage = createPage("Mira")
-addPageTitle(miraPage, "Mira", "Aimbot, FOV")
+addPageTitle(miraPage, "Mira", "Aimbot, FOV, WallCheck")
 
 aimCard = makeCard(miraPage, 56, 32)
 makeLabel(aimCard, "Aimbot", 10, 200)
@@ -1940,14 +1959,19 @@ aimTMCard = makeCard(miraPage, 132, 32)
 makeLabel(aimTMCard, "Aimbot • TeamCheck", 10, 200)
 makeToggle(aimTMCard, false, function(s) Config.Aimbot.TeamCheck = s end)
 
-aimTargetCard = makeCard(miraPage, 170, 32)
+-- 🔥 NOVO: WallCheck
+aimWCCard = makeCard(miraPage, 170, 32)
+makeLabel(aimWCCard, "Aimbot • WallCheck (só visível)", 10, 240)
+makeToggle(aimWCCard, false, function(s) Config.Aimbot.WallCheck = s end)
+
+aimTargetCard = makeCard(miraPage, 208, 32)
 makeLabel(aimTargetCard, "Alvo (Head / Torso)", 10, 150)
 targetInput = makeInput(aimTargetCard, 6, Config.Aimbot.Target, 70, function(txt)
     if txt == "Head" or txt == "Torso" then Config.Aimbot.Target = txt end
 end)
 targetInput.Position = UDim2.new(1, -90, 0.5, -12)
 
-aimSmoothCard = makeCard(miraPage, 208, 32)
+aimSmoothCard = makeCard(miraPage, 246, 32)
 makeLabel(aimSmoothCard, "Suavidade (0.05 - 1)", 10, 150)
 smoothInput = makeInput(aimSmoothCard, 6, tostring(Config.Aimbot.Smoothness), 60, function(txt)
     local n = tonumber(txt)
@@ -1955,11 +1979,11 @@ smoothInput = makeInput(aimSmoothCard, 6, tostring(Config.Aimbot.Smoothness), 60
 end)
 smoothInput.Position = UDim2.new(1, -80, 0.5, -12)
 
-fovCard = makeCard(miraPage, 246, 32)
+fovCard = makeCard(miraPage, 284, 32)
 makeLabel(fovCard, "FOV Circle", 10, 200)
 makeToggle(fovCard, false, function(s) Config.Aimbot.FOVEnabled = s end)
 
-fovSizeCard = makeCard(miraPage, 284, 32)
+fovSizeCard = makeCard(miraPage, 322, 32)
 makeLabel(fovSizeCard, "Tamanho FOV", 10, 150)
 fovSizeInput = makeInput(fovSizeCard, 6, tostring(Config.Aimbot.FOVSize), 50, function(txt)
     local n = tonumber(txt)
@@ -1967,7 +1991,7 @@ fovSizeInput = makeInput(fovSizeCard, 6, tostring(Config.Aimbot.FOVSize), 50, fu
 end)
 fovSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
-fovChangeCard = makeCard(miraPage, 322, 32)
+fovChangeCard = makeCard(miraPage, 360, 32)
 makeLabel(fovChangeCard, "FOV Changer", 10, 200)
 makeToggle(fovChangeCard, false, function(s)
     Config.FOVChanger.Enabled = s
@@ -2153,7 +2177,6 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- ========== RESET GERAL ==========
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2273,48 +2296,76 @@ RunService.RenderStepped:Connect(function(dt)
     )
 end)
 
--- ========== HELPER DE VISIBILIDADE ==========
 local function setCapsuleVisible(state)
     capsule.Visible = state
     capsuleGlow.Visible = state
     dragIcon.Visible = state
 end
 
--- ========== DRAG CÁPSULA (pelo dragIcon independente) ==========
+-- ========== DRAG CÁPSULA (UIS.InputBegan global) ==========
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
 capsuleMoved = false
 
-dragIcon.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+local function getMousePos()
+    return UIS:GetMouseLocation()
+end
+
+local function isOnDragIcon()
+    if not dragIcon or not dragIcon.Visible then return false end
+    local m = getMousePos()
+    local abs = dragIcon.AbsolutePosition
+    local sz = dragIcon.AbsoluteSize
+    return m.X >= abs.X and m.X <= abs.X + sz.X
+       and m.Y >= abs.Y and m.Y <= abs.Y + sz.Y
+end
+
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    if not capsule.Visible then return end
+
+    if isOnDragIcon() then
         capsuleDragActive = true
         capsuleMoved = true
-        capsuleDragStart = input.Position
+        capsuleDragStart = getMousePos()
         capsuleStartPos = capsule.Position
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                capsuleDragActive = false
-                task.delay(0.15, function()
-                    capsuleMoved = false
-                end)
+        task.delay(0.3, function()
+            if not capsuleDragActive then
+                capsuleMoved = false
             end
         end)
     end
 end)
 
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        if capsuleDragActive then
+            capsuleDragActive = false
+            task.delay(0.15, function()
+                capsuleMoved = false
+            end)
+        end
+    end
+end)
+
 RunService.RenderStepped:Connect(function()
     if capsuleDragActive and capsuleDragStart then
-        local mousePos = UIS:GetMouseLocation()
+        local mousePos = getMousePos()
         local delta = mousePos - capsuleDragStart
         local newPos = UDim2.new(
             capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
             capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
         )
         capsule.Position = newPos
-        dragIcon.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset + 4, newPos.Y.Scale, newPos.Y.Offset + 3)
+        dragIcon.Position = UDim2.new(
+            newPos.X.Scale, newPos.X.Offset + 4,
+            newPos.Y.Scale, newPos.Y.Offset + 3
+        )
     end
 end)
 
