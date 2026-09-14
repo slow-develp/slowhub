@@ -791,15 +791,25 @@ capsuleStroke.Color = PURPLE_BORDER
 capsuleStroke.Thickness = 2
 capsuleStroke.Transparency = 0.1
 
-dragIcon = Instance.new("ImageLabel")
+-- 🔥 dragIcon é TextButton clicável, imagem dentro
+dragIcon = Instance.new("TextButton")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 22, 0, 22)
-dragIcon.Position = UDim2.new(0, 8, 0.5, -11)
+dragIcon.Size = UDim2.new(0, 28, 0, 28)
+dragIcon.Position = UDim2.new(0, 4, 0.5, -14)
 dragIcon.BackgroundTransparency = 1
-dragIcon.Image = "rbxassetid://79111374854903"
-dragIcon.ImageColor3 = Color3.fromRGB(200, 200, 210)
-dragIcon.ZIndex = 6
+dragIcon.Text = ""
+dragIcon.AutoButtonColor = false
+dragIcon.Active = true
+dragIcon.ZIndex = 7
 dragIcon.Parent = capsule
+
+local dragImg = Instance.new("ImageLabel")
+dragImg.Size = UDim2.new(1, 0, 1, 0)
+dragImg.BackgroundTransparency = 1
+dragImg.Image = "rbxassetid://79111374854903"
+dragImg.ImageColor3 = Color3.fromRGB(200, 200, 210)
+dragImg.ZIndex = 8
+dragImg.Parent = dragIcon
 
 statusDot = Instance.new("Frame")
 statusDot.Size = UDim2.new(0, 8, 0, 8)
@@ -1727,7 +1737,6 @@ makeToggle(jumpCard, false, function(s)
     setInfJump(s)
 end)
 
--- ========== TELEPORTE (com Reset e Remover) ==========
 tpPage = createPage("Teleporte")
 addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
 
@@ -1841,7 +1850,6 @@ removeHint = makeButton(tpPage, "🗑️ Remover Slot (X)", 0, 155, 26, Color3.f
 end)
 removeHint.Position = UDim2.new(0, 12, 1, -44)
 
--- ========== VISUAL ==========
 visualPage = createPage("Visual")
 addPageTitle(visualPage, "Visual", "ESP, Fullbright")
 
@@ -1876,7 +1884,6 @@ makeToggle(fbCard, false, function(s)
     setFullbright(s)
 end)
 
--- ========== HITBOX ==========
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
@@ -1900,7 +1907,6 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
--- ========== MIRA ==========
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV")
 
@@ -1953,7 +1959,6 @@ makeToggle(fovChangeCard, false, function(s)
     setFOVChanger(s)
 end)
 
--- ========== ANTI ==========
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
 
@@ -1971,7 +1976,6 @@ makeToggle(afkCard, false, function(s)
     setAntiAFK(s)
 end)
 
--- ========== SERVIDOR ==========
 serverPage = createPage("Servidor")
 addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
 
@@ -1991,7 +1995,6 @@ hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
--- ========== SOBRE ==========
 aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações")
 
@@ -2010,7 +2013,6 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
--- ========== CRIA ABAS ==========
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2137,7 +2139,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- ========== RESET GERAL ==========
+-- ========== RESET GERAL (desativa todas as funções) ==========
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2170,6 +2172,7 @@ local function resetEverything()
         pcall(function() speedConn:Disconnect() end)
         speedConn = nil
     end
+
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum.WalkSpeed = 16 end
@@ -2261,31 +2264,22 @@ capsuleDragStart = nil
 capsuleStartPos = nil
 capsuleMoved = false
 
-local function isOnDragIcon(inputPos)
-    local abs = dragIcon.AbsolutePosition
-    local sz = dragIcon.AbsoluteSize
-    return inputPos.X >= abs.X and inputPos.X <= abs.X + sz.X
-       and inputPos.Y >= abs.Y and inputPos.Y <= abs.Y + sz.Y
-end
-
-capsule.InputBegan:Connect(function(input)
+dragIcon.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        if isOnDragIcon(input.Position) then
-            capsuleDragActive = true
-            capsuleMoved = true
-            capsuleDragStart = input.Position
-            capsuleStartPos = capsule.Position
+        capsuleDragActive = true
+        capsuleMoved = true
+        capsuleDragStart = input.Position
+        capsuleStartPos = capsule.Position
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    capsuleDragActive = false
-                    task.delay(0.15, function()
-                        capsuleMoved = false
-                    end)
-                end
-            end)
-        end
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                capsuleDragActive = false
+                task.delay(0.15, function()
+                    capsuleMoved = false
+                end)
+            end
+        end)
     end
 end)
 
@@ -2402,7 +2396,7 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ========== DRAG KEY ==========
+-- ========== DRAG DA TELA DE KEY ==========
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
