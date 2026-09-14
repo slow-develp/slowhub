@@ -71,9 +71,10 @@ rowCache = {}
 originalLighting = {}
 welcomeShown = false
 
+-- 🔥 FIX: Aimbot com FOV 250 e Smoothness 0.25
 Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(150,90,240), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false},
-    Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(150,90,240), FOVSize=150, Target="Head", TeamCheck=false, Smoothness=0.15, AutoShot=false},
+    Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(150,90,240), FOVSize=250, Target="Head", TeamCheck=false, Smoothness=0.25, AutoShot=false},
     Hitbox = {Enabled=false, Size=3, Color=Color3.fromRGB(150,90,240), ShowBox=false},
     Noclip = {Enabled=false},
     Speed = {Enabled=false, Value=32},
@@ -303,18 +304,20 @@ local function updateESP()
     end
 end
 
+-- 🔥 FIX: FOV com ZIndex 500 e stroke visível
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
 fovFrame.BackgroundTransparency = 1
 fovFrame.BorderSizePixel = 0
 fovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 fovFrame.Visible = false
-fovFrame.ZIndex = 4
+fovFrame.ZIndex = 500
 fovFrame.Parent = parentGui
+
 fovStroke = Instance.new("UIStroke", fovFrame)
 fovStroke.Color = Config.Aimbot.FOVColor
-fovStroke.Thickness = 1.5
-fovStroke.Transparency = 0.2
+fovStroke.Thickness = 2.5
+fovStroke.Transparency = 0
 Instance.new("UICorner", fovFrame).CornerRadius = UDim.new(1, 0)
 
 local function updateFOV()
@@ -354,6 +357,7 @@ local function getClosest()
     return closest
 end
 
+-- 🔥 FIX: Aimbot com verificação de target.Parent
 aimbotActive = false
 local function startAimbot()
     if aimbotActive then return end
@@ -361,7 +365,7 @@ local function startAimbot()
     task.spawn(function()
         while Config.Aimbot.Enabled do
             local target = getClosest()
-            if target then
+            if target and target.Parent then
                 local goal = CFrame.new(Camera.CFrame.Position, target.Position)
                 Camera.CFrame = Camera.CFrame:Lerp(goal, Config.Aimbot.Smoothness)
                 if Config.Aimbot.AutoShot then
@@ -397,8 +401,9 @@ local function createHitbox(plr)
     hitboxData[plr] = {Frame = frame, Stroke = stroke}
 end
 
+-- 🔥 FIX: updateHitboxes mais permissivo
 local function updateHitboxes()
-    if not (Config.Hitbox.Enabled and Config.Hitbox.ShowBox) then
+    if not Config.Hitbox.Enabled then
         for _, d in pairs(hitboxData) do
             if d.Frame then d.Frame.Visible = false end
         end
@@ -746,6 +751,13 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 9999
 gui.Parent = parentGui
 
+-- 🔥 FIX: mover folders e FOV pro `gui` (DisplayOrder alto)
+pcall(function()
+    if espFolder then espFolder.Parent = gui end
+    if hitboxFolder then hitboxFolder.Parent = gui end
+    if fovFrame then fovFrame.Parent = gui end
+end)
+
 local vpSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
 local maxW = math.min(900, vpSize.X * 0.85)
 local maxH = math.min(600, vpSize.Y * 0.80)
@@ -791,24 +803,25 @@ capsuleStroke.Color = PURPLE_BORDER
 capsuleStroke.Thickness = 2
 capsuleStroke.Transparency = 0.1
 
--- 🔥 dragIcon é TextButton clicável, imagem dentro
+-- 🔥 FIX: dragIcon INDEPENDENTE (filho direto do gui, acima da cápsula)
 dragIcon = Instance.new("TextButton")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 28, 0, 28)
-dragIcon.Position = UDim2.new(0, 4, 0.5, -14)
+dragIcon.Size = UDim2.new(0, 30, 0, 30)
+dragIcon.Position = UDim2.new(0.5, -106, 0, 15)
 dragIcon.BackgroundTransparency = 1
 dragIcon.Text = ""
 dragIcon.AutoButtonColor = false
 dragIcon.Active = true
-dragIcon.ZIndex = 7
-dragIcon.Parent = capsule
+dragIcon.Visible = false
+dragIcon.ZIndex = 100
+dragIcon.Parent = gui
 
 local dragImg = Instance.new("ImageLabel")
 dragImg.Size = UDim2.new(1, 0, 1, 0)
 dragImg.BackgroundTransparency = 1
 dragImg.Image = "rbxassetid://79111374854903"
 dragImg.ImageColor3 = Color3.fromRGB(200, 200, 210)
-dragImg.ZIndex = 8
+dragImg.ZIndex = 101
 dragImg.Parent = dragIcon
 
 statusDot = Instance.new("Frame")
@@ -1887,10 +1900,12 @@ end)
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
+-- 🔥 FIX: toggle Hitbox liga ShowBox junto
 hbCard = makeCard(hitboxPage, 56, 32)
 makeLabel(hbCard, "Hitbox Expander", 10, 200)
 makeToggle(hbCard, false, function(s)
     Config.Hitbox.Enabled = s
+    Config.Hitbox.ShowBox = s
 end)
 
 hbSizeCard = makeCard(hitboxPage, 94, 32)
@@ -2025,7 +2040,6 @@ createTabButton("Servidor", ICONS.Star)
 createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
-
 closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
 closeModal.Size = UDim2.new(1, 0, 1, 0)
@@ -2139,7 +2153,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- ========== RESET GERAL (desativa todas as funções) ==========
+-- ========== RESET GERAL ==========
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2228,6 +2242,7 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     capsule.Visible = false
     capsuleGlow.Visible = false
+    dragIcon.Visible = false
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
@@ -2258,7 +2273,14 @@ RunService.RenderStepped:Connect(function(dt)
     )
 end)
 
--- ========== DRAG CÁPSULA (só pela cruz) ==========
+-- ========== HELPER DE VISIBILIDADE ==========
+local function setCapsuleVisible(state)
+    capsule.Visible = state
+    capsuleGlow.Visible = state
+    dragIcon.Visible = state
+end
+
+-- ========== DRAG CÁPSULA (pelo dragIcon independente) ==========
 capsuleDragActive = false
 capsuleDragStart = nil
 capsuleStartPos = nil
@@ -2287,14 +2309,16 @@ RunService.RenderStepped:Connect(function()
     if capsuleDragActive and capsuleDragStart then
         local mousePos = UIS:GetMouseLocation()
         local delta = mousePos - capsuleDragStart
-        capsule.Position = UDim2.new(
+        local newPos = UDim2.new(
             capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
             capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
         )
+        capsule.Position = newPos
+        dragIcon.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset + 4, newPos.Y.Scale, newPos.Y.Offset + 3)
     end
 end)
 
--- ========== DRAG MAIN (pelo header) ==========
+-- ========== DRAG MAIN ==========
 mainDragging = false
 mainDragStart = nil
 mainStartPos = nil
@@ -2329,8 +2353,7 @@ isMaximized = false
 
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
-    capsule.Visible = true
-    capsuleGlow.Visible = true
+    setCapsuleVisible(true)
 end)
 
 maxBtn.MouseButton1Click:Connect(function()
@@ -2353,16 +2376,7 @@ capsule.MouseButton1Click:Connect(function()
         capsuleMoved = false
         return
     end
-
-    local mousePos = UIS:GetMouseLocation()
-    local abs = dragIcon.AbsolutePosition
-    local sz = dragIcon.AbsoluteSize
-    local onCross = mousePos.X >= abs.X and mousePos.X <= abs.X + sz.X
-                and mousePos.Y >= abs.Y and mousePos.Y <= abs.Y + sz.Y
-    if onCross then return end
-
-    capsule.Visible = false
-    capsuleGlow.Visible = false
+    setCapsuleVisible(false)
     main.Visible = true
 end)
 
@@ -2376,8 +2390,7 @@ local function tryValidateKey()
         keyFrame.Visible = false
         keyGui.Enabled = false
         gui.Enabled = true
-        capsule.Visible = true
-        capsuleGlow.Visible = true
+        setCapsuleVisible(true)
         main.Visible = false
         if not welcomeShown then
             welcomeShown = true
@@ -2396,7 +2409,7 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ========== DRAG DA TELA DE KEY ==========
+-- ========== DRAG KEY ==========
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
@@ -2430,6 +2443,5 @@ end)
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
-capsule.Visible = false
-capsuleGlow.Visible = false
+setCapsuleVisible(false)
 main.Visible = false
