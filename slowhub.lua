@@ -2077,10 +2077,12 @@ makeToggle(flingCard, false, function(s)
     Config.Fling.Enabled = s
     setFling(s)
     
-    -- Desativa o Anti-Fling quando o Fling tá ON
     if s then
+        -- Desativa Anti-Fling (senão brigam)
         Config.AntiFling.Enabled = false
         setAntiFling(false)
+        -- Avisa o usuário
+        addNotif("Fling", "Anti-Fling desativado para o Fling funcionar.", 4)
     end
 end)
 
