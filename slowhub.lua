@@ -849,24 +849,6 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ GLOW RGB atrás da cápsula ═══════════
-capsuleGlow = Instance.new("Frame")
-capsuleGlow.Name = "CapsuleGlow"
-capsuleGlow.Size = UDim2.new(0, 240, 0, 54)
-capsuleGlow.Position = UDim2.new(0.5, -120, 0, 7)
-capsuleGlow.BackgroundColor3 = Color3.fromRGB(130, 70, 220)
-capsuleGlow.BackgroundTransparency = 0.4
-capsuleGlow.BorderSizePixel = 0
-capsuleGlow.ZIndex = 4
-capsuleGlow.Visible = false
-capsuleGlow.Parent = gui
-Instance.new("UICorner", capsuleGlow).CornerRadius = UDim.new(1, 0)
-
-glowStroke = Instance.new("UIStroke", capsuleGlow)
-glowStroke.Color = Color3.fromRGB(130, 70, 220)
-glowStroke.Thickness = 3
-glowStroke.Transparency = 0.3
-
 -- ═══════════ CÁPSULA IDÊNTICA AO PEPI ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
@@ -881,10 +863,7 @@ capsule.ZIndex = 5
 capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
-local capsuleStroke = Instance.new("UIStroke", capsule)
-capsuleStroke.Color = Color3.fromRGB(130, 70, 220)
-capsuleStroke.Thickness = 2
-capsuleStroke.Transparency = 0
+-- (borda roxa removida — vai ser substituída pelo glow RGB)
 
 local capsuleGradient = Instance.new("UIGradient", capsule)
 capsuleGradient.Color = ColorSequence.new({
@@ -941,6 +920,25 @@ capsuleText.TextXAlignment = Enum.TextXAlignment.Center
 capsuleText.Active = false
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
+
+-- ═══ GLOW RGB FINO (no lugar da borda roxa) ═══
+capsuleGlow = Instance.new("Frame")
+capsuleGlow.Name = "CapsuleGlow"
+capsuleGlow.Size = UDim2.new(0, 220, 0, 44)
+capsuleGlow.Position = UDim2.new(0.5, -110, 0, 12)
+capsuleGlow.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+capsuleGlow.BackgroundTransparency = 1
+capsuleGlow.BorderSizePixel = 0
+capsuleGlow.ZIndex = 7
+capsuleGlow.Visible = false
+capsuleGlow.Parent = gui
+Instance.new("UICorner", capsuleGlow).CornerRadius = UDim.new(1, 0)
+
+glowStroke = Instance.new("UIStroke", capsuleGlow)
+glowStroke.Color = Color3.fromRGB(255, 0, 0)
+glowStroke.Thickness = 1.5
+glowStroke.Transparency = 0
+glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
@@ -2006,7 +2004,7 @@ hbSizeCard = makeCard(hitboxPage, 94, 32)
 makeLabel(hbSizeCard, "Tamanho", 10, 150)
 hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
     local n = tonumber(txt)
-    if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
+        if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
 end)
 hbSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
@@ -2350,54 +2348,42 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ========== GLOW RGB ANIMADO ==========
+-- ═══════════ GLOW RGB FINO (segue a cápsula) ═══════════
 local glowHue = 0
 
 RunService.RenderStepped:Connect(function(dt)
-    if not capsuleGlow or not capsuleGlow.Visible then return end
+    if not capsuleGlow then return end
 
-    glowHue = (glowHue + dt * 0.08) % 1
-
-    local color = Color3.fromHSV(glowHue, 1, 1)
-
-    capsuleGlow.BackgroundColor3 = color
-    if glowStroke then glowStroke.Color = color end
-
+    -- Mantém sincronizado com a cápsula
+    capsuleGlow.Visible = capsule.Visible
     capsuleGlow.Position = UDim2.new(
-        capsule.Position.X.Scale,
-        capsule.Position.X.Offset - 10,
-        capsule.Position.Y.Scale,
-        capsule.Position.Y.Offset - 5
+        capsule.Position.X.Scale, capsule.Position.X.Offset,
+        capsule.Position.Y.Scale, capsule.Position.Y.Offset
     )
+    capsuleGlow.Size = capsule.Size
 
-    local pulse = math.sin(tick() * 3) * 0.05
-    capsuleGlow.BackgroundTransparency = 0.45 + pulse
+    -- Cor RGB andando no espectro
+    glowHue = (glowHue + dt * 0.15) % 1
+    local color = Color3.fromHSV(glowHue, 1, 1)
+    if glowStroke then glowStroke.Color = color end
 end)
 
--- ========== DRAG CÁPSULA (só quando ARRASTA) ==========
-local capsuleDragHolding = false
+-- ═══════════ DRAG CÁPSULA + ABRIR PAINEL ═══════════
+local capsuleDragging = false
 local capsuleDragStartMouse = nil
 local capsuleStartPos = nil
 local capsuleMovedDistance = 0
-local capsuleWasOnDragZone = false
+local capsuleDownWasOnDragZone = false
 
-local function getMousePos()
+local function getMouse()
     return UIS:GetMouseLocation()
 end
 
-local function isPointIn(frame, pos)
+local function isInFrame(frame, pos)
     local abs = frame.AbsolutePosition
     local sz = frame.AbsoluteSize
     return pos.X >= abs.X and pos.X <= abs.X + sz.X
        and pos.Y >= abs.Y and pos.Y <= abs.Y + sz.Y
-end
-
-local function isMouseOnCapsule()
-    return isPointIn(capsule, getMousePos())
-end
-
-local function isMouseOnDragZone()
-    return isPointIn(dragZone, getMousePos())
 end
 
 UIS.InputBegan:Connect(function(input, gp)
@@ -2405,29 +2391,31 @@ UIS.InputBegan:Connect(function(input, gp)
     if input.UserInputType ~= Enum.UserInputType.MouseButton1
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
     if not capsule.Visible then return end
-    if not isMouseOnCapsule() then return end
 
-    local pos = getMousePos()
-    capsuleWasOnDragZone = isMouseOnDragZone()
-    capsuleDragHolding = true
+    local pos = getMouse()
+    if not isInFrame(capsule, pos) then return end
+
+    capsuleDownWasOnDragZone = isInFrame(dragZone, pos)
+    capsuleDragging = true
     capsuleDragStartMouse = pos
     capsuleStartPos = capsule.Position
     capsuleMovedDistance = 0
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if not capsuleDragHolding then return end
+    if not capsuleDragging then return end
     if input.UserInputType ~= Enum.UserInputType.MouseMovement
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-    local pos = getMousePos()
-    local delta = Vector2.new(pos.X - capsuleDragStartMouse.X, pos.Y - capsuleDragStartMouse.Y)
-    capsuleMovedDistance = math.sqrt(delta.X * delta.X + delta.Y * delta.Y)
+    local pos = getMouse()
+    local dx = pos.X - capsuleDragStartMouse.X
+    local dy = pos.Y - capsuleDragStartMouse.Y
+    capsuleMovedDistance = math.sqrt(dx * dx + dy * dy)
 
-    if capsuleMovedDistance > 6 and capsuleWasOnDragZone then
+    if capsuleMovedDistance > 6 and capsuleDownWasOnDragZone then
         capsule.Position = UDim2.new(
-            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
-            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + dx,
+            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + dy
         )
     end
 end)
@@ -2437,15 +2425,15 @@ UIS.InputEnded:Connect(function(input)
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
     if not capsule.Visible then return end
 
-    local wasHolding = capsuleDragHolding
-    local wasOnZone = capsuleWasOnDragZone
+    local wasOnDragZone = capsuleDownWasOnDragZone
     local moved = capsuleMovedDistance
 
-    capsuleDragHolding = false
+    capsuleDragging = false
     capsuleDragStartMouse = nil
-    capsuleWasOnDragZone = false
+    capsuleDownWasOnDragZone = false
 
-    if moved <= 6 and not wasOnZone and wasHolding then
+    -- Se clicou FORA da zona da seta e não arrastou → abre painel
+    if not wasOnDragZone and moved <= 6 then
         capsule.Visible = false
         capsuleGlow.Visible = false
         main.Visible = true
