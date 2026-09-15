@@ -536,11 +536,13 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
+-- ═══════════ FLING (só arremessa se encostar de verdade) ═══════════
 flingConn = nil
+flingCooldown = {}
 
 local function setFling(state)
     if flingConn then flingConn:Disconnect() flingConn = nil end
+    flingCooldown = {}
     if not state then return end
 
     flingConn = RunService.Heartbeat:Connect(function()
@@ -558,27 +560,30 @@ local function setFling(state)
                     if targetHrp and targetHum and targetHum.Health > 0 then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
                         
-                        -- Se o player estiver perto (encostando), arremessa ele
-                        if dist < 6 then
-                            -- Descobre a direção pra longe de você
+                        -- Só ativa se estiver MUITO perto (encostando de verdade)
+                        if dist < 3.5 then
+                            -- Cooldown de 0.3s por player (evita spam)
+                            local now = tick()
+                            if flingCooldown[plr] and now - flingCooldown[plr] < 0.3 then
+                                return
+                            end
+                            flingCooldown[plr] = now
+
+                            -- Calcula direção pra longe de você
                             local dir = targetHrp.Position - myHrp.Position
                             if dir.Magnitude < 0.1 then
                                 dir = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
                             end
                             dir = dir.Unit
-                            
-                            -- Aplica velocidade forte MAS SÓ NA DIREÇÃO HORIZONTAL
-                            -- (velocidade vertical muito alta faz o Roblox reverter)
+
+                            -- FORÇA MUITO ALTA (arremessa pro void de verdade)
                             targetHrp.AssemblyLinearVelocity = Vector3.new(
-                                dir.X * 250,
-                                80,
-                                dir.Z * 250
+                                dir.X * 1500,
+                                2000,
+                                dir.Z * 1500
                             )
-                            
-                            -- Empurra o CFrame suavemente
-                            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(dir.X * 2, 2, dir.Z * 2)
-                            
-                            -- Força o Humanoid a perder controle (sem matar)
+
+                            -- Ativa PlatformStand (perde controle)
                             pcall(function()
                                 targetHum.PlatformStand = true
                             end)
