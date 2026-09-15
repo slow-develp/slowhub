@@ -2030,6 +2030,12 @@ makeLabel(flingCard, "Fling (arremessa players)", 10, 200)
 makeToggle(flingCard, false, function(s)
     Config.Fling.Enabled = s
     setFling(s)
+    
+    -- Desativa o Anti-Fling quando o Fling tá ON
+    if s then
+        Config.AntiFling.Enabled = false
+        setAntiFling(false)
+    end
 end)
 
 -- ═══════════ PÁGINA SERVIDOR ═══════════
