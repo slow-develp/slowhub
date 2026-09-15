@@ -849,7 +849,7 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ CÁPSULA IDÊNTICA AO PEPI ═══════════
+-- ═══════════ CÁPSULA ESTILO PEPI ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
 capsule.Size = UDim2.new(0, 220, 0, 44)
@@ -871,7 +871,6 @@ capsuleGradient.Color = ColorSequence.new({
 })
 capsuleGradient.Rotation = 0
 
--- Zona da seta (esquerda) — 44px
 dragZone = Instance.new("TextButton")
 dragZone.Name = "DragZone"
 dragZone.Size = UDim2.new(0, 44, 1, 0)
@@ -884,7 +883,6 @@ dragZone.ZIndex = 8
 dragZone.Parent = capsule
 Instance.new("UICorner", dragZone).CornerRadius = UDim.new(1, 0)
 
--- Ícone da seta (24×24)
 dragIcon = Instance.new("ImageLabel")
 dragIcon.Name = "DragIcon"
 dragIcon.Size = UDim2.new(0, 24, 0, 24)
@@ -895,7 +893,6 @@ dragIcon.ImageColor3 = Color3.fromRGB(210, 210, 220)
 dragIcon.ZIndex = 9
 dragIcon.Parent = dragZone
 
--- Linha divisória visível
 local divider = Instance.new("Frame")
 divider.Name = "Divider"
 divider.Size = UDim2.new(0, 1, 0, 24)
@@ -919,7 +916,7 @@ capsuleText.Active = false
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
 
--- ═══ GLOW RGB FINO (no lugar da borda roxa) ═══
+-- ═══ GLOW RGB FINO ═══
 capsuleGlow = Instance.new("Frame")
 capsuleGlow.Name = "CapsuleGlow"
 capsuleGlow.Size = UDim2.new(0, 220, 0, 44)
@@ -1151,31 +1148,9 @@ headerStroke.Color = PURPLE_BORDER
 headerStroke.Thickness = 1
 headerStroke.Transparency = 0.2
 
--- 🔥 Seta visual no header (mesma zona da cápsula)
-local headerDragIcon = Instance.new("ImageLabel")
-headerDragIcon.Name = "HeaderDragIcon"
-headerDragIcon.Size = UDim2.new(0, 20, 0, 20)
-headerDragIcon.Position = UDim2.new(0, 12, 0.5, -10)
-headerDragIcon.BackgroundTransparency = 1
-headerDragIcon.Image = "rbxassetid://79111374854903"
-headerDragIcon.ImageColor3 = Color3.fromRGB(200, 200, 210)
-headerDragIcon.ZIndex = 12
-headerDragIcon.Parent = header
-
--- Linha divisória no header
-local headerDivider = Instance.new("Frame")
-headerDivider.Name = "HeaderDivider"
-headerDivider.Size = UDim2.new(0, 1, 0, 20)
-headerDivider.Position = UDim2.new(0, 44, 0.5, -10)
-headerDivider.BackgroundColor3 = Color3.fromRGB(70, 65, 90)
-headerDivider.BackgroundTransparency = 0.2
-headerDivider.BorderSizePixel = 0
-headerDivider.ZIndex = 11
-headerDivider.Parent = header
-
 titleLbl = Instance.new("TextLabel")
 titleLbl.Size = UDim2.new(1, -240, 1, 0)
-titleLbl.Position = UDim2.new(0, 54, 0, 0)
+titleLbl.Position = UDim2.new(0, 80, 0, 0)
 titleLbl.BackgroundTransparency = 1
 titleLbl.Text = "Slow Hub"
 titleLbl.TextColor3 = TEXT
@@ -2024,7 +1999,7 @@ hbSizeCard = makeCard(hitboxPage, 94, 32)
 makeLabel(hbSizeCard, "Tamanho", 10, 150)
 hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
     local n = tonumber(txt)
-        if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
+    if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
 end)
 hbSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
 
@@ -2457,77 +2432,33 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ═══════════ DRAG MAIN (header — seta move / resto minimiza) ═══════════
+-- ═══════════ DRAG MAIN (pelo header, sem minimizar) ═══════════
 local mainDragging = false
-local mainDragStartMouse = nil
+local mainDragStart = nil
 local mainStartPos = nil
-local mainMovedDistance = 0
-local mainDownWasOnDragZone = false
 
-local function isInHeaderDragZone(pos)
-    local abs = header.AbsolutePosition
-    local sz = header.AbsoluteSize
-    return pos.X >= abs.X and pos.X <= abs.X + 44
-       and pos.Y >= abs.Y and pos.Y <= abs.Y + sz.Y
-end
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = true
+        mainDragStart = input.Position
+        mainStartPos = main.Position
 
-local function isInHeader(pos)
-    local abs = header.AbsolutePosition
-    local sz = header.AbsoluteSize
-    return pos.X >= abs.X and pos.X <= abs.X + sz.X
-       and pos.Y >= abs.Y and pos.Y <= abs.Y + sz.Y
-end
-
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not main.Visible then return end
-
-    local pos = UIS:GetMouseLocation()
-    if not isInHeader(pos) then return end
-
-    mainDownWasOnDragZone = isInHeaderDragZone(pos)
-    mainDragging = true
-    mainDragStartMouse = pos
-    mainStartPos = main.Position
-    mainMovedDistance = 0
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if not mainDragging then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseMovement
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-    local pos = UIS:GetMouseLocation()
-    local dx = pos.X - mainDragStartMouse.X
-    local dy = pos.Y - mainDragStartMouse.Y
-    mainMovedDistance = math.sqrt(dx * dx + dy * dy)
-
-    if mainMovedDistance > 6 and mainDownWasOnDragZone then
-        main.Position = UDim2.new(
-            mainStartPos.X.Scale, mainStartPos.X.Offset + dx,
-            mainStartPos.Y.Scale, mainStartPos.Y.Offset + dy
-        )
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mainDragging = false
+            end
+        end)
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not main.Visible then return end
-
-    local wasOnDragZone = mainDownWasOnDragZone
-    local moved = mainMovedDistance
-
-    mainDragging = false
-    mainDragStartMouse = nil
-    mainDownWasOnDragZone = false
-
-    if not wasOnDragZone and moved <= 6 then
-        main.Visible = false
-        capsule.Visible = true
-        capsuleGlow.Visible = true
+RunService.RenderStepped:Connect(function()
+    if mainDragging and mainDragStart then
+        local delta = UIS:GetMouseLocation() - mainDragStart
+        main.Position = UDim2.new(
+            mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X,
+            mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y
+        )
     end
 end)
 
