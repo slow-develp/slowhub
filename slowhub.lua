@@ -822,7 +822,6 @@ local function openDiscord()
     end)
 end
 
--- 🔥 Ativa Anti-Fling por padrão
 task.spawn(function()
     task.wait(1)
     if Config.AntiFling.Enabled then
@@ -849,7 +848,7 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ CÁPSULA ESTILO PEPI ═══════════
+-- ═══════════ CÁPSULA ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
 capsule.Size = UDim2.new(0, 220, 0, 44)
@@ -903,7 +902,7 @@ divider.BorderSizePixel = 0
 divider.ZIndex = 6
 divider.Parent = capsule
 
-capsuleText = Instance.new("TextLabel")
+capsuleText = Instance.new("TextButton")
 capsuleText.Size = UDim2.new(1, -54, 1, 0)
 capsuleText.Position = UDim2.new(0, 44, 0, 0)
 capsuleText.BackgroundTransparency = 1
@@ -912,11 +911,10 @@ capsuleText.TextColor3 = Color3.fromRGB(255, 255, 255)
 capsuleText.Font = Enum.Font.GothamBold
 capsuleText.TextSize = 16
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
-capsuleText.Active = false
+capsuleText.AutoButtonColor = false
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
 
--- ═══ GLOW RGB FINO ═══
 capsuleGlow = Instance.new("Frame")
 capsuleGlow.Name = "CapsuleGlow"
 capsuleGlow.Size = UDim2.new(0, 220, 0, 44)
@@ -935,6 +933,7 @@ glowStroke.Thickness = 1.5
 glowStroke.Transparency = 0
 glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
+-- ═══════════ KEY GUI ═══════════
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
 keyGui.ResetOnSpawn = false
@@ -1052,6 +1051,7 @@ keyStatus.Parent = keyFrame
 
 discordBtn.MouseButton1Click:Connect(openDiscord)
 
+-- ═══════════ MAIN PANEL ═══════════
 main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = NORMAL_SIZE
@@ -1411,6 +1411,7 @@ local function addPageTitle(page, text, subtext)
         sub.Parent = page
     end
 end
+
 local function makeCard(parent, y, h)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, -24, 0, h or 32)
@@ -1597,6 +1598,7 @@ local function addNotif(title, desc, duration)
     task.delay(duration, dismiss)
 end
 
+-- ═══════════ PÁGINA HOME ═══════════
 homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
 
@@ -1628,6 +1630,7 @@ creditLbl.Parent = welcomeCard
 infoCard = makeCard(homePage, 136, 32)
 makeLabel(infoCard, "Use o menu lateral para acessar as funções.", 10, 380)
 
+-- ═══════════ PÁGINA JOGADORES ═══════════
 playersPage = createPage("Jogadores")
 addPageTitle(playersPage, "Jogadores", "Lista de jogadores no servidor")
 
@@ -1802,6 +1805,7 @@ Players.PlayerRemoving:Connect(function(plr)
     playerCards[plr.UserId] = nil
 end)
 
+-- ═══════════ PÁGINA MOVIMENTO ═══════════
 movementPage = createPage("Movimento")
 addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
 
@@ -1838,6 +1842,7 @@ makeToggle(jumpCard, false, function(s)
     setInfJump(s)
 end)
 
+-- ═══════════ PÁGINA TELEPORTE ═══════════
 tpPage = createPage("Teleporte")
 addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
 
@@ -1951,6 +1956,7 @@ removeHint = makeButton(tpPage, "🗑️ Remover Slot (X)", 0, 155, 26, Color3.f
 end)
 removeHint.Position = UDim2.new(0, 12, 1, -44)
 
+-- ═══════════ PÁGINA VISUAL ═══════════
 visualPage = createPage("Visual")
 addPageTitle(visualPage, "Visual", "ESP, Fullbright")
 
@@ -1985,6 +1991,7 @@ makeToggle(fbCard, false, function(s)
     setFullbright(s)
 end)
 
+-- ═══════════ PÁGINA HITBOX ═══════════
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
@@ -2009,7 +2016,7 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
--- ========== MIRA ==========
+-- ═══════════ PÁGINA MIRA ═══════════
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV, WallCheck")
 
@@ -2066,7 +2073,7 @@ makeToggle(fovChangeCard, false, function(s)
     setFOVChanger(s)
 end)
 
--- ========== ANTI (Anti-Fling já vem ON) ==========
+-- ═══════════ PÁGINA ANTI ═══════════
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
 
@@ -2084,6 +2091,7 @@ makeToggle(afkCard, false, function(s)
     setAntiAFK(s)
 end)
 
+-- ═══════════ PÁGINA SERVIDOR ═══════════
 serverPage = createPage("Servidor")
 addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
 
@@ -2103,6 +2111,7 @@ hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
+-- ═══════════ PÁGINA SOBRE ═══════════
 aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações")
 
@@ -2121,6 +2130,7 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
+-- ═══════════ BOTÕES LATERAIS ═══════════
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2134,265 +2144,57 @@ createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
 
-closeModal = Instance.new("Frame")
-closeModal.Name = "CloseModal"
-closeModal.Size = UDim2.new(1, 0, 1, 0)
-closeModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-closeModal.BackgroundTransparency = 0.5
-closeModal.BorderSizePixel = 0
-closeModal.Visible = false
-closeModal.ZIndex = 300
-closeModal.Parent = gui
+-- ═══════════ BOTÕES DO HEADER (MINIMIZAR / MAXIMIZAR / FECHAR) ═══════════
 
-modalBox = Instance.new("Frame")
-modalBox.Size = UDim2.new(0, 320, 0, 160)
-modalBox.Position = UDim2.new(0.5, -160, 0.5, -80)
-modalBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-modalBox.BorderSizePixel = 0
-modalBox.ZIndex = 301
-modalBox.Parent = closeModal
-Instance.new("UICorner", modalBox).CornerRadius = UDim.new(0, 16)
-
-modalStroke = Instance.new("UIStroke", modalBox)
-modalStroke.Color = PURPLE_BORDER
-modalStroke.Thickness = 1.5
-modalStroke.Transparency = 0.2
-
-modalTitle = Instance.new("TextLabel")
-modalTitle.Size = UDim2.new(1, -32, 0, 24)
-modalTitle.Position = UDim2.new(0, 16, 0, 20)
-modalTitle.BackgroundTransparency = 1
-modalTitle.Text = "Close Window"
-modalTitle.TextColor3 = TEXT
-modalTitle.Font = Enum.Font.GothamBold
-modalTitle.TextSize = 16
-modalTitle.TextXAlignment = Enum.TextXAlignment.Left
-modalTitle.ZIndex = 302
-modalTitle.Parent = modalBox
-
-modalDesc = Instance.new("TextLabel")
-modalDesc.Size = UDim2.new(1, -32, 0, 40)
-modalDesc.Position = UDim2.new(0, 16, 0, 48)
-modalDesc.BackgroundTransparency = 1
-modalDesc.Text = "Are you sure? All features will be disabled."
-modalDesc.TextColor3 = TEXTDIM
-modalDesc.Font = Enum.Font.Gotham
-modalDesc.TextSize = 12
-modalDesc.TextXAlignment = Enum.TextXAlignment.Left
-modalDesc.TextWrapped = true
-modalDesc.ZIndex = 302
-modalDesc.Parent = modalBox
-
-cancelBtn = Instance.new("TextButton")
-cancelBtn.Size = UDim2.new(0, 130, 0, 32)
-cancelBtn.Position = UDim2.new(0, 16, 1, -48)
-cancelBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-cancelBtn.Text = "Cancel"
-cancelBtn.TextColor3 = TEXT
-cancelBtn.Font = Enum.Font.GothamBold
-cancelBtn.TextSize = 12
-cancelBtn.AutoButtonColor = false
-cancelBtn.ZIndex = 302
-cancelBtn.Parent = modalBox
-Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
-
-confirmCloseBtn = Instance.new("TextButton")
-confirmCloseBtn.Size = UDim2.new(0, 130, 0, 32)
-confirmCloseBtn.Position = UDim2.new(1, -146, 1, -48)
-confirmCloseBtn.BackgroundColor3 = ACCENT
-confirmCloseBtn.Text = "Close Window"
-confirmCloseBtn.TextColor3 = Color3.new(1, 1, 1)
-confirmCloseBtn.Font = Enum.Font.GothamBold
-confirmCloseBtn.TextSize = 12
-confirmCloseBtn.AutoButtonColor = false
-confirmCloseBtn.ZIndex = 302
-confirmCloseBtn.Parent = modalBox
-Instance.new("UICorner", confirmCloseBtn).CornerRadius = UDim.new(0, 8)
-
-cancelBtn.MouseEnter:Connect(function()
-    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
-end)
-cancelBtn.MouseLeave:Connect(function()
-    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
-end)
-
-confirmCloseBtn.MouseEnter:Connect(function()
-    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(180, 120, 255)}):Play()
-end)
-confirmCloseBtn.MouseLeave:Connect(function()
-    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = ACCENT}):Play()
-end)
-
-local function openCloseModal()
-    closeModal.Visible = true
-    closeModal.BackgroundTransparency = 1
-    modalBox.Size = UDim2.new(0, 260, 0, 130)
-    modalBox.Position = UDim2.new(0.5, -130, 0.5, -65)
-    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 0.5}):Play()
-    TweenService:Create(modalBox, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 320, 0, 160),
-        Position = UDim2.new(0.5, -160, 0.5, -80)
-    }):Play()
-end
-
-local function closeCloseModal()
-    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(modalBox, TweenInfo.new(0.2), {
-        Size = UDim2.new(0, 260, 0, 130),
-        Position = UDim2.new(0.5, -130, 0.5, -65)
-    }):Play()
-    task.wait(0.22)
-    closeModal.Visible = false
-end
-
-cancelBtn.MouseButton1Click:Connect(closeCloseModal)
-
--- ========== RESET GERAL ==========
-local function resetEverything()
-    for section, data in pairs(Config) do
-        if type(data) == "table" and data.Enabled ~= nil then
-            data.Enabled = false
-        end
-    end
-
-    if espData then
-        for _, d in pairs(espData) do
-            if d.Box then d.Box.Visible = false end
-            if d.Name then d.Name.Visible = false end
-            if d.Dist then d.Dist.Visible = false end
-            if d.HpBg then d.HpBg.Visible = false end
-            if d.HL then d.HL.Enabled = false end
-        end
-    end
-
-    if hitboxData then
-        for _, d in pairs(hitboxData) do
-            if d.Frame then d.Frame.Visible = false end
-        end
-    end
-
-    if noclipConn then
-        pcall(function() noclipConn:Disconnect() end)
-        noclipConn = nil
-    end
-
-    if speedConn then
-        pcall(function() speedConn:Disconnect() end)
-        speedConn = nil
-    end
-
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.WalkSpeed = 16 end
-
-    pcall(function()
-        if flyConn then flyConn:Disconnect() flyConn = nil end
-        if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
-        if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
-        if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
-        if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
-        if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
-        if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
-        if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
-        flyBodyVel, flyBodyGyro = nil, nil
-        flyLinVel, flyAlign, flyAttachment = nil, nil, nil
-        if hum then hum.PlatformStand = false end
-    end)
-
-    if infJumpConn then
-        pcall(function() infJumpConn:Disconnect() end)
-        infJumpConn = nil
-    end
-
-    if originalLighting and originalLighting.Ambient then
-        pcall(function()
-            Lighting.Ambient = originalLighting.Ambient
-            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-            Lighting.Brightness = originalLighting.Brightness
-            Lighting.ClockTime = originalLighting.ClockTime
-            Lighting.FogEnd = originalLighting.FogEnd
-            Lighting.GlobalShadows = originalLighting.GlobalShadows
-        end)
-    end
-
-    pcall(function()
-        if Camera then Camera.FieldOfView = 70 end
-    end)
-
-    if antiFlingConn then
-        pcall(function() antiFlingConn:Disconnect() end)
-        antiFlingConn = nil
-    end
-
-    if antiAfkConn then
-        pcall(function() antiAfkConn:Disconnect() end)
-        antiAfkConn = nil
-    end
-
-    if fovFrame then fovFrame.Visible = false end
-
-    aimbotActive = false
-end
-
-confirmCloseBtn.MouseButton1Click:Connect(function()
-    resetEverything()
-    closeModal.Visible = false
+-- MINIMIZAR — esconde painel e mostra cápsula
+minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
-    capsule.Visible = false
-    capsuleGlow.Visible = false
-    addNotif("Slow Hub", "Todas as funções foram desativadas.")
+    capsule.Visible = true
+    capsuleGlow.Visible = true
 end)
 
--- ═══════════ GLOW RGB FINO (segue a cápsula) ═══════════
-local glowHue = 0
-
-RunService.RenderStepped:Connect(function(dt)
-    if not capsuleGlow then return end
-
-    capsuleGlow.Visible = capsule.Visible
-    capsuleGlow.Position = UDim2.new(
-        capsule.Position.X.Scale, capsule.Position.X.Offset,
-        capsule.Position.Y.Scale, capsule.Position.Y.Offset
-    )
-    capsuleGlow.Size = capsule.Size
-
-    glowHue = (glowHue + dt * 0.15) % 1
-    local color = Color3.fromHSV(glowHue, 1, 1)
-    if glowStroke then glowStroke.Color = color end
+-- FECHAR — mesma coisa, fecha direto sem modal
+closeBtn.MouseButton1Click:Connect(function()
+    main.Visible = false
+    capsule.Visible = true
+    capsuleGlow.Visible = true
 end)
 
--- ═══════════ DRAG CÁPSULA + ABRIR PAINEL ═══════════
+-- MAXIMIZAR
+isMaximized = false
+maxBtn.MouseButton1Click:Connect(function()
+    isMaximized = not isMaximized
+    if isMaximized then
+        main.Size = MAXIMIZED_SIZE
+        main.Position = UDim2.new(0.5, -maxW/2, 0.5, -maxH/2)
+    else
+        main.Size = NORMAL_SIZE
+        main.Position = UDim2.new(0.5, -250, 0.5, -170)
+    end
+end)
+
+-- ═══════════ CÁPSULA — SÓ ABRE SE CLICAR NELA ═══════════
+
+capsuleText.MouseButton1Click:Connect(function()
+    if capsule.Visible then
+        capsule.Visible = false
+        capsuleGlow.Visible = false
+        main.Visible = true
+    end
+end)
+
+-- Arrastar cápsula pelo ícone
 local capsuleDragging = false
-local capsuleDragStartMouse = nil
+local capsuleDragStart = nil
 local capsuleStartPos = nil
-local capsuleMovedDistance = 0
-local capsuleDownWasOnDragZone = false
 
-local function getMouse()
-    return UIS:GetMouseLocation()
-end
-
-local function isInFrame(frame, pos)
-    local abs = frame.AbsolutePosition
-    local sz = frame.AbsoluteSize
-    return pos.X >= abs.X and pos.X <= abs.X + sz.X
-       and pos.Y >= abs.Y and pos.Y <= abs.Y + sz.Y
-end
-
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not capsule.Visible then return end
-
-    local pos = getMouse()
-    if not isInFrame(capsule, pos) then return end
-
-    capsuleDownWasOnDragZone = isInFrame(dragZone, pos)
-    capsuleDragging = true
-    capsuleDragStartMouse = pos
-    capsuleStartPos = capsule.Position
-    capsuleMovedDistance = 0
+dragZone.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        capsuleDragging = true
+        capsuleDragStart = UIS:GetMouseLocation()
+        capsuleStartPos = capsule.Position
+    end
 end)
 
 UIS.InputChanged:Connect(function(input)
@@ -2400,39 +2202,39 @@ UIS.InputChanged:Connect(function(input)
     if input.UserInputType ~= Enum.UserInputType.MouseMovement
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-    local pos = getMouse()
-    local dx = pos.X - capsuleDragStartMouse.X
-    local dy = pos.Y - capsuleDragStartMouse.Y
-    capsuleMovedDistance = math.sqrt(dx * dx + dy * dy)
+    local pos = UIS:GetMouseLocation()
+    local dx = pos.X - capsuleDragStart.X
+    local dy = pos.Y - capsuleDragStart.Y
 
-    if capsuleMovedDistance > 6 and capsuleDownWasOnDragZone then
-        capsule.Position = UDim2.new(
-            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + dx,
-            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + dy
-        )
-    end
+    capsule.Position = UDim2.new(
+        capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + dx,
+        capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + dy
+    )
 end)
 
 UIS.InputEnded:Connect(function(input)
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not capsule.Visible then return end
-
-    local wasOnDragZone = capsuleDownWasOnDragZone
-    local moved = capsuleMovedDistance
-
-    capsuleDragging = false
-    capsuleDragStartMouse = nil
-    capsuleDownWasOnDragZone = false
-
-    if not wasOnDragZone and moved <= 6 then
-        capsule.Visible = false
-        capsuleGlow.Visible = false
-        main.Visible = true
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        capsuleDragging = false
     end
 end)
 
--- ═══════════ DRAG MAIN (pelo header, sem minimizar) ═══════════
+-- ═══════════ GLOW RGB DA CÁPSULA ═══════════
+local glowHue = 0
+RunService.RenderStepped:Connect(function(dt)
+    if not capsuleGlow then return end
+    capsuleGlow.Visible = capsule.Visible
+    capsuleGlow.Position = UDim2.new(
+        capsule.Position.X.Scale, capsule.Position.X.Offset,
+        capsule.Position.Y.Scale, capsule.Position.Y.Offset
+    )
+    capsuleGlow.Size = capsule.Size
+    glowHue = (glowHue + dt * 0.15) % 1
+    local color = Color3.fromHSV(glowHue, 1, 1)
+    if glowStroke then glowStroke.Color = color end
+end)
+
+-- ═══════════ DRAG DO PAINEL PELO HEADER ═══════════
 local mainDragging = false
 local mainDragStart = nil
 local mainStartPos = nil
@@ -2441,14 +2243,15 @@ header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = true
-        mainDragStart = input.Position
+        mainDragStart = UIS:GetMouseLocation()
         mainStartPos = main.Position
+    end
+end)
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                mainDragging = false
-            end
-        end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = false
     end
 end)
 
@@ -2462,31 +2265,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== BOTÕES HEADER ==========
-isMaximized = false
-
-minBtn.MouseButton1Click:Connect(function()
-    main.Visible = false
-    capsule.Visible = true
-    capsuleGlow.Visible = true
-end)
-
-maxBtn.MouseButton1Click:Connect(function()
-    isMaximized = not isMaximized
-    if isMaximized then
-        main.Size = MAXIMIZED_SIZE
-        main.Position = UDim2.new(0.5, -maxW/2, 0.5, -maxH/2)
-    else
-        main.Size = NORMAL_SIZE
-        main.Position = UDim2.new(0.5, -250, 0.5, -170)
-    end
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
-    openCloseModal()
-end)
-
--- ========== VALIDAÇÃO KEY ==========
+-- ═══════════ VALIDAÇÃO DA KEY ═══════════
 local function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == KEY then
@@ -2511,12 +2290,11 @@ local function tryValidateKey()
 end
 
 submitBtn.MouseButton1Click:Connect(tryValidateKey)
-
 keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ========== DRAG DA TELA DE KEY ==========
+-- ═══════════ DRAG DA TELA DE KEY ═══════════
 local keyDragging = false
 local keyDragStart = nil
 local keyStartPos = nil
@@ -2525,14 +2303,15 @@ keyFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         keyDragging = true
-        keyDragStart = input.Position
+        keyDragStart = UIS:GetMouseLocation()
         keyStartPos = keyFrame.Position
+    end
+end)
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                keyDragging = false
-            end
-        end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        keyDragging = false
     end
 end)
 
@@ -2546,7 +2325,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ========== BOOT FINAL ==========
+-- ═══════════ BOOT FINAL ═══════════
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
