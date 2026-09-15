@@ -53,6 +53,7 @@ local PURPLE_BORDER = Color3.fromRGB(130, 70, 220)
 local KEY = "SlowHubVIP"
 local DISCORD_LINK = "https://discord.com/users/tav.x"
 local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
+local FLY_URL = "https://raw.githubusercontent.com/Cat558-uz/fly-v4-better/refs/heads/main/FlyV4_Final.lua"
 
 ICONS = {
     Home = "rbxassetid://111637692403997",
@@ -82,7 +83,8 @@ Config = {
     Fullbright = {Enabled=false},
     FOVChanger = {Enabled=false, Value=70},
     AntiFling = {Enabled=true},
-    AntiAFK = {Enabled=false}
+    AntiAFK = {Enabled=false},
+    Fling = {Enabled=false}
 }
 local function safeChar(plr)
     if not plr or not plr.Parent then return nil, nil, nil end
@@ -499,112 +501,28 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY CORRIGIDO ═══════════
-flyConn = nil
-flyAttachment = nil
-flyLinVel = nil
-flyAlign = nil
-flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
-flyInputConn = nil
-flyInputEndConn = nil
-
-local function stopFly()
-    if flyConn then flyConn:Disconnect() flyConn = nil end
-    if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
-    if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
-
-    if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
-    if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
-    if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
-
-    flyLinVel, flyAlign, flyAttachment = nil, nil, nil
-
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = false end
-end
-
-local function startFly()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not (hrp and hum) then return end
-
-    hum.PlatformStand = true
-
-    flyAttachment = Instance.new("Attachment")
-    flyAttachment.Name = "SlowHub_FlyAttach"
-    flyAttachment.Parent = hrp
-
-    flyLinVel = Instance.new("LinearVelocity")
-    flyLinVel.Name = "SlowHub_LinVel"
-    flyLinVel.MaxForce = math.huge
-    flyLinVel.VectorVelocity = Vector3.zero
-    flyLinVel.RelativeTo = Enum.ActuatorRelativeTo.World
-    flyLinVel.Attachment0 = flyAttachment
-    flyLinVel.Parent = hrp
-
-    flyAlign = Instance.new("AlignOrientation")
-    flyAlign.Name = "SlowHub_Align"
-    flyAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment
-    flyAlign.Attachment0 = flyAttachment
-    flyAlign.MaxTorque = math.huge
-    flyAlign.Responsiveness = 200
-    flyAlign.Parent = hrp
-
-    flyInputConn = UIS.InputBegan:Connect(function(input, gp)
-        if gp then return end
-        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = true
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = true
-        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = true
-        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = true
-        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = true
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = true
-        end
-    end)
-
-    flyInputEndConn = UIS.InputEnded:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = false
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = false
-        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = false
-        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = false
-        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = false
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = false
-        end
-    end)
-
-    flyConn = RunService.RenderStepped:Connect(function()
-        if not Config.Fly.Enabled then return end
-        if not (hrp and hrp.Parent) then return end
-        if not (flyLinVel and flyLinVel.Parent) then return end
-        if not (flyAlign and flyAlign.Parent) then return end
-
-        if hum and not hum.PlatformStand then
-            hum.PlatformStand = true
-        end
-
-        local cam = Camera.CFrame
-        local move = Vector3.zero
-
-        if flyKeys.W then move += cam.LookVector end
-        if flyKeys.S then move -= cam.LookVector end
-        if flyKeys.A then move -= cam.RightVector end
-        if flyKeys.D then move += cam.RightVector end
-        if flyKeys.Space then move += Vector3.new(0, 1, 0) end
-        if flyKeys.Shift then move -= Vector3.new(0, 1, 0) end
-
-        if move.Magnitude > 0 then
-            move = move.Unit * Config.Fly.Speed
-        end
-
-        flyLinVel.VectorVelocity = move
-        flyAlign.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
-    end)
-end
+-- ═══════════ FLY v4 INTEGRADO ═══════════
+flyScriptLoaded = false
 
 local function setFly(state)
-    if state then startFly() else stopFly() end
+    if state then
+        if not flyScriptLoaded then
+            local success = pcall(function()
+                loadstring(game:HttpGet(FLY_URL))()
+            end)
+            if success then
+                flyScriptLoaded = true
+                task.wait(0.5)
+                addNotif("Fly", "Use o botão 'VOAR' do Fly v4 ou aperte F.", 5)
+            else
+                addNotif("Fly", "Erro ao carregar o Fly v4.", 5)
+            end
+        else
+            addNotif("Fly", "Fly v4 já está aberto.", 3)
+        end
+    else
+        addNotif("Fly", "Use o botão 'VOAR' do Fly v4 para desativar.", 5)
+    end
 end
 
 infJumpConn = nil
@@ -615,6 +533,41 @@ local function setInfJump(state)
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end)
+end
+
+-- ═══════════ FLING (arremessa quem encostar) ═══════════
+flingConn = nil
+
+local function setFling(state)
+    if flingConn then flingConn:Disconnect() flingConn = nil end
+    if not state then return end
+
+    flingConn = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local myHrp = char:FindFirstChild("HumanoidRootPart")
+        if not myHrp then return end
+
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local targetChar = plr.Character
+                if targetChar then
+                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+                    local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+                    if targetHrp and targetHum and targetHum.Health > 0 then
+                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
+                        if dist < 5 then
+                            targetHrp.AssemblyLinearVelocity = Vector3.new(
+                                math.random(-800, 800),
+                                1200,
+                                math.random(-800, 800)
+                            )
+                        end
+                    end
+                end
+            end
+        end
     end)
 end
 
@@ -654,6 +607,7 @@ local function setFOVChanger(state)
     end
 end
 
+-- ═══════════ ANTI-FLING (original, sem mudanças) ═══════════
 antiFlingConn = nil
 local function setAntiFling(state)
     if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
@@ -1789,7 +1743,7 @@ makeToggle(speedCard, false, function(s)
 end)
 
 flyCard = makeCard(movementPage, 132, 32)
-makeLabel(flyCard, "Fly ⚠ Pode não funcionar em alguns jogos", 10, 260)
+makeLabel(flyCard, "Fly v4 (abre GUI)", 10, 200)
 makeToggle(flyCard, false, function(s)
     Config.Fly.Enabled = s
     setFly(s)
@@ -2035,7 +1989,7 @@ end)
 
 -- ═══════════ PÁGINA ANTI ═══════════
 antiPage = createPage("Anti")
-addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
+addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK, Fling")
 
 afCard = makeCard(antiPage, 56, 32)
 makeLabel(afCard, "Anti-Fling", 10, 200)
@@ -2049,6 +2003,13 @@ makeLabel(afkCard, "Anti-AFK", 10, 200)
 makeToggle(afkCard, false, function(s)
     Config.AntiAFK.Enabled = s
     setAntiAFK(s)
+end)
+
+flingCard = makeCard(antiPage, 132, 32)
+makeLabel(flingCard, "Fling (arremessa players)", 10, 200)
+makeToggle(flingCard, false, function(s)
+    Config.Fling.Enabled = s
+    setFling(s)
 end)
 
 -- ═══════════ PÁGINA SERVIDOR ═══════════
@@ -2106,14 +2067,12 @@ setPage("Home")
 
 -- ═══════════ BOTÕES DO HEADER ═══════════
 
--- MINIMIZAR
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     capsule.Visible = true
     capsuleGlow.Visible = true
 end)
 
--- MAXIMIZAR
 isMaximized = false
 maxBtn.MouseButton1Click:Connect(function()
     isMaximized = not isMaximized
@@ -2126,7 +2085,7 @@ maxBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ═══════════ CÁPSULA — SÓ ABRE SE CLICAR NELA ═══════════
+-- ═══════════ CÁPSULA ═══════════
 
 capsuleText.MouseButton1Click:Connect(function()
     if capsule.Visible then
@@ -2136,7 +2095,6 @@ capsuleText.MouseButton1Click:Connect(function()
     end
 end)
 
--- Arrastar cápsula pelo ícone
 local capsuleDragging = false
 local capsuleDragStart = nil
 local capsuleStartPos = nil
@@ -2217,7 +2175,7 @@ RunService.RenderStepped:Connect(function()
         )
     end
 end)
--- ═══════════ MODAL DE FECHAR (estilo Pepi) ═══════════
+-- ═══════════ MODAL DE FECHAR (estilo Pepi — Opção D) ═══════════
 
 closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
@@ -2332,7 +2290,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- Reset de tudo
+-- Reset geral
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2356,35 +2314,15 @@ local function resetEverything()
         end
     end
 
-    if noclipConn then
-        pcall(function() noclipConn:Disconnect() end)
-        noclipConn = nil
-    end
-
-    if speedConn then
-        pcall(function() speedConn:Disconnect() end)
-        speedConn = nil
-    end
+    if noclipConn then pcall(function() noclipConn:Disconnect() end) noclipConn = nil end
+    if speedConn then pcall(function() speedConn:Disconnect() end) speedConn = nil end
+    if flingConn then pcall(function() flingConn:Disconnect() end) flingConn = nil end
 
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum.WalkSpeed = 16 end
 
-    pcall(function()
-        if flyConn then flyConn:Disconnect() flyConn = nil end
-        if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
-        if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
-        if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
-        if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
-        if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
-        flyLinVel, flyAlign, flyAttachment = nil, nil, nil
-        if hum then hum.PlatformStand = false end
-    end)
-
-    if infJumpConn then
-        pcall(function() infJumpConn:Disconnect() end)
-        infJumpConn = nil
-    end
+    if infJumpConn then pcall(function() infJumpConn:Disconnect() end) infJumpConn = nil end
 
     if originalLighting and originalLighting.Ambient then
         pcall(function()
@@ -2401,32 +2339,20 @@ local function resetEverything()
         if Camera then Camera.FieldOfView = 70 end
     end)
 
-    if antiFlingConn then
-        pcall(function() antiFlingConn:Disconnect() end)
-        antiFlingConn = nil
-    end
-
-    if antiAfkConn then
-        pcall(function() antiAfkConn:Disconnect() end)
-        antiAfkConn = nil
-    end
-
+    if antiFlingConn then pcall(function() antiFlingConn:Disconnect() end) antiFlingConn = nil end
+    if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end) antiAfkConn = nil end
     if fovFrame then fovFrame.Visible = false end
-
     aimbotActive = false
 end
 
--- Botão "Close Window" — fecha o script TOTALMENTE + mostra notificação
+-- Botão "Close Window" — fecha tudo + notificação
 confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.", 3)
-
     resetEverything()
     closeCloseModal()
-
     capsule.Visible = false
     capsuleGlow.Visible = false
     main.Visible = false
-
     task.wait(0.8)
 
     pcall(function()
@@ -2441,9 +2367,7 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     pcall(function()
         if noclipConn then noclipConn:Disconnect() end
         if speedConn then speedConn:Disconnect() end
-        if flyConn then flyConn:Disconnect() end
-        if flyInputConn then flyInputConn:Disconnect() end
-        if flyInputEndConn then flyInputEndConn:Disconnect() end
+        if flingConn then flingConn:Disconnect() end
         if infJumpConn then infJumpConn:Disconnect() end
         if antiFlingConn then antiFlingConn:Disconnect() end
         if antiAfkConn then antiAfkConn:Disconnect() end
@@ -2454,16 +2378,6 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
         if hum then
             hum.WalkSpeed = 16
             hum.PlatformStand = false
-        end
-    end)
-    pcall(function()
-        if originalLighting and originalLighting.Ambient then
-            Lighting.Ambient = originalLighting.Ambient
-            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-            Lighting.Brightness = originalLighting.Brightness
-            Lighting.ClockTime = originalLighting.ClockTime
-            Lighting.FogEnd = originalLighting.FogEnd
-            Lighting.GlobalShadows = originalLighting.GlobalShadows
         end
     end)
     pcall(function()
