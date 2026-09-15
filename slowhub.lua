@@ -537,7 +537,6 @@ local function setInfJump(state)
 end
 
 -- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
--- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
 flingConn = nil
 
 local function setFling(state)
@@ -558,30 +557,30 @@ local function setFling(state)
                     local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
                     if targetHrp and targetHum and targetHum.Health > 0 then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        if dist < 10 then
-                            -- Método 1: Zera a velocidade (impede ele de se segurar)
-                            targetHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                            
-                            -- Método 2: Move o CFrame DIRETAMENTE pra longe e pra cima
-                            -- (isso não tem como o Roblox reverter)
-                            local direction = (targetHrp.Position - myHrp.Position)
-                            if direction.Magnitude < 0.1 then
-                                direction = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+                        
+                        -- Se o player estiver perto (encostando), arremessa ele
+                        if dist < 6 then
+                            -- Descobre a direção pra longe de você
+                            local dir = targetHrp.Position - myHrp.Position
+                            if dir.Magnitude < 0.1 then
+                                dir = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
                             end
-                            direction = direction.Unit
+                            dir = dir.Unit
                             
-                            local newPos = targetHrp.Position + Vector3.new(
-                                direction.X * 500,
-                                1000,
-                                direction.Z * 500
+                            -- Aplica velocidade forte MAS SÓ NA DIREÇÃO HORIZONTAL
+                            -- (velocidade vertical muito alta faz o Roblox reverter)
+                            targetHrp.AssemblyLinearVelocity = Vector3.new(
+                                dir.X * 250,
+                                80,
+                                dir.Z * 250
                             )
                             
-                            targetHrp.CFrame = CFrame.new(newPos)
+                            -- Empurra o CFrame suavemente
+                            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(dir.X * 2, 2, dir.Z * 2)
                             
-                            -- Método 3: Força o Humanoid a cair (perde controle)
+                            -- Força o Humanoid a perder controle (sem matar)
                             pcall(function()
                                 targetHum.PlatformStand = true
-                                targetHum:ChangeState(Enum.HumanoidStateType.Physics)
                             end)
                         end
                     end
