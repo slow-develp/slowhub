@@ -478,7 +478,7 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY ═══════════
+-- FLY
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
@@ -490,11 +490,9 @@ local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
     if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
-
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
-
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
@@ -616,7 +614,7 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING ═══════════
+-- FLING
 flingConn = nil
 flingCooldown = {}
 
@@ -661,7 +659,7 @@ local function setFling(state)
     end)
 end
 
--- ═══════════ ANTI-FLING ═══════════
+-- ANTI-FLING
 antiFlingConn = nil
 local function setAntiFling(state)
     if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
@@ -1433,18 +1431,7 @@ local function makeLabel(card, text, x, width)
     lbl.TextSize = 10
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.ZIndex = 130
- local function makeLabel(card, text, x, width)
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0, width or 200, 1, 0)
-    lbl.Position = UDim2.new(0, x or 10, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = TEXT
-    lbl.Font = Enum.Font.GothamMedium
-    lbl.TextSize = 10
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.ZIndex = 130
-    lbl.Parent = card
+        lbl.Parent = card
     return lbl
 end
 
@@ -1606,9 +1593,8 @@ local function addNotif(title, desc, duration)
     }):Play()
 
     task.delay(duration, dismiss)
-  end
-    
-  -- ═══════════ PÁGINA HOME ═══════════
+end
+-- PÁGINA HOME
 homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
 
@@ -1640,7 +1626,7 @@ creditLbl.Parent = welcomeCard
 infoCard = makeCard(homePage, 136, 32)
 makeLabel(infoCard, "Use o menu lateral para acessar as funções.", 10, 380)
 
--- ═══════════ PÁGINA JOGADORES ═══════════
+-- PÁGINA JOGADORES
 playersPage = createPage("Jogadores")
 addPageTitle(playersPage, "Jogadores", "Lista de jogadores no servidor")
 
@@ -1815,7 +1801,7 @@ Players.PlayerRemoving:Connect(function(plr)
     playerCards[plr.UserId] = nil
 end)
 
--- ═══════════ PÁGINA MOVIMENTO ═══════════
+-- PÁGINA MOVIMENTO
 movementPage = createPage("Movimento")
 addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
 
@@ -1852,7 +1838,7 @@ makeToggle(jumpCard, false, function(s)
     setInfJump(s)
 end)
 
--- ═══════════ PÁGINA TELEPORTE ═══════════
+-- PÁGINA TELEPORTE
 tpPage = createPage("Teleporte")
 addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
 
@@ -1942,7 +1928,7 @@ local function refreshSavedSlots()
     end
 end
 
-saveBtn = makeButton(tpPage, "💾 Salvar Posição", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
+saveBtn = makeButton(tpPage, "Salvar Posição", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
     local nextSlot = 1
     while savedSlots[nextSlot] do nextSlot += 1 end
     if savePosition(nextSlot) then
@@ -1953,7 +1939,7 @@ saveBtn = makeButton(tpPage, "💾 Salvar Posição", 0, 155, 26, Color3.fromRGB
 end)
 saveBtn.Position = UDim2.new(0, 12, 1, -108)
 
-resetBtn = makeButton(tpPage, "🔄 Resetar Todos", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
+resetBtn = makeButton(tpPage, "Resetar Todos", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
     savedSlots = {}
     savedPositions = {}
     refreshSavedSlots()
@@ -1961,12 +1947,12 @@ resetBtn = makeButton(tpPage, "🔄 Resetar Todos", 0, 155, 26, Color3.fromRGB(3
 end)
 resetBtn.Position = UDim2.new(0, 12, 1, -76)
 
-removeHint = makeButton(tpPage, "🗑️ Remover Slot (X)", 0, 155, 26, Color3.fromRGB(60, 25, 30), function()
+removeHint = makeButton(tpPage, "Remover Slot (X)", 0, 155, 26, Color3.fromRGB(60, 25, 30), function()
     addNotif("Remover Slot", "Clique no X vermelho ao lado do slot.")
 end)
 removeHint.Position = UDim2.new(0, 12, 1, -44)
 
--- ═══════════ PÁGINA VISUAL ═══════════
+-- PÁGINA VISUAL
 visualPage = createPage("Visual")
 addPageTitle(visualPage, "Visual", "ESP, Fullbright")
 
@@ -2001,7 +1987,7 @@ makeToggle(fbCard, false, function(s)
     setFullbright(s)
 end)
 
--- ═══════════ PÁGINA HITBOX ═══════════
+-- PÁGINA HITBOX
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Tamanho, cor e quadro visual")
 
@@ -2026,7 +2012,7 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
--- ═══════════ PÁGINA MIRA ═══════════
+-- PÁGINA MIRA
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV, WallCheck")
 
@@ -2083,7 +2069,7 @@ makeToggle(fovChangeCard, false, function(s)
     setFOVChanger(s)
 end)
 
--- ═══════════ PÁGINA ANTI ═══════════
+-- PÁGINA ANTI
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK, Fling")
 
@@ -2131,7 +2117,7 @@ flingToggle = makeToggle(flingCard, false, function(s)
     end
 end)
 
--- ═══════════ PÁGINA SERVIDOR ═══════════
+-- PÁGINA SERVIDOR
 serverPage = createPage("Servidor")
 addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
 
@@ -2151,7 +2137,7 @@ hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, ACCENT, function()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
 
--- ═══════════ PÁGINA SOBRE ═══════════
+-- PÁGINA SOBRE
 aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações")
 
@@ -2170,6 +2156,7 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
+-- BOTÕES LATERAIS
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2183,6 +2170,7 @@ createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
 
+-- BOTÕES DO HEADER
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     capsule.Visible = true
@@ -2201,8 +2189,7 @@ maxBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ═══════════ CÁPSULA ═══════════
-
+-- CÁPSULA
 capsuleText.MouseButton1Click:Connect(function()
     if capsule.Visible then
         capsule.Visible = false
@@ -2409,7 +2396,6 @@ local function resetEverything()
             data.Enabled = false
         end
     end
-
     if espData then
         for _, d in pairs(espData) do
             if d.Box then d.Box.Visible = false end
@@ -2424,7 +2410,6 @@ local function resetEverything()
             if d.Frame then d.Frame.Visible = false end
         end
     end
-
     if noclipConn then pcall(function() noclipConn:Disconnect() end) noclipConn = nil end
     if speedConn then pcall(function() speedConn:Disconnect() end) speedConn = nil end
     if flingConn then pcall(function() flingConn:Disconnect() end) flingConn = nil end
@@ -2434,16 +2419,13 @@ local function resetEverything()
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
-
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then 
         hum.WalkSpeed = 16 
         hum.PlatformStand = false
     end
-
     if infJumpConn then pcall(function() infJumpConn:Disconnect() end) infJumpConn = nil end
-
     if originalLighting and originalLighting.Ambient then
         pcall(function()
             Lighting.Ambient = originalLighting.Ambient
@@ -2571,4 +2553,6 @@ keyGui.Enabled = true
 keyFrame.Visible = true
 capsule.Visible = false
 capsuleGlow.Visible = false
-main.Visible = false  
+main.Visible = false
+            
+ 
