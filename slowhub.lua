@@ -16,19 +16,13 @@ pcall(function()
         if ok and res then parentGui = res end
     end
 end)
-
-if not parentGui or typeof(parentGui) ~= "Instance" then
-    parentGui = CoreGui
-end
-
+if not parentGui or typeof(parentGui) ~= "Instance" then parentGui = CoreGui end
 local testOK = pcall(function()
     local t = Instance.new("Folder")
     t.Parent = parentGui
     t:Destroy()
 end)
-if not testOK then
-    parentGui = CoreGui
-end
+if not testOK then parentGui = CoreGui end
 
 pcall(function()
     if parentGui and parentGui.FindFirstChild then
@@ -78,7 +72,7 @@ Config = {
     Noclip = {Enabled=false},
     Speed = {Enabled=false, Value=32},
     InfiniteJump = {Enabled=false},
-    Fly = {Enabled=false, Speed=60},
+    Fly = {Enabled=false, Speed=80},
     Fullbright = {Enabled=false},
     FOVChanger = {Enabled=false, Value=70},
     AntiFling = {Enabled=true},
@@ -133,7 +127,6 @@ end
 local function createESP(plr)
     if espData[plr] then return end
     local d = {}
-
     local box = Instance.new("Frame")
     box.Name = "Box"
     box.BackgroundTransparency = 1
@@ -205,7 +198,6 @@ local function createESP(plr)
     d.HpBg = hpBg
     d.HpBar = hpBar
     d.HL = hl
-
     espData[plr] = d
 end
 
@@ -219,15 +211,11 @@ end
 
 local function updateESP()
     if not Config.ESP.Enabled then
-        for _, d in pairs(espData) do
-            hideESP(d)
-        end
+        for _, d in pairs(espData) do hideESP(d) end
         return
     end
-
     local localChar = LocalPlayer.Character
     local localHrp = localChar and localChar:FindFirstChild("HumanoidRootPart")
-
     for plr, d in pairs(espData) do
         if isValidTarget(plr, Config.ESP.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
@@ -236,18 +224,15 @@ local function updateESP()
                 if head then
                     local headPos, headOn = Camera:WorldToViewportPoint(head.Position)
                     local footPos, footOn = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-
                     if headOn and footOn then
                         local h = math.abs(footPos.Y - headPos.Y)
                         local w = h * 0.6
                         local x = headPos.X - w / 2
                         local y = headPos.Y
-
                         d.Box.Visible = true
                         d.Box.Position = UDim2.new(0, x, 0, y)
                         d.Box.Size = UDim2.new(0, w, 0, h)
                         d.Stroke.Color = Config.ESP.Color
-
                         if Config.ESP.ShowName then
                             d.Name.Visible = true
                             d.Name.Text = plr.Name
@@ -256,7 +241,6 @@ local function updateESP()
                         else
                             d.Name.Visible = false
                         end
-
                         if Config.ESP.ShowDistance then
                             d.Dist.Visible = true
                             local dist = localHrp and (localHrp.Position - hrp.Position).Magnitude or 0
@@ -266,7 +250,6 @@ local function updateESP()
                         else
                             d.Dist.Visible = false
                         end
-
                         if Config.ESP.ShowHealth then
                             d.HpBg.Visible = true
                             d.HpBg.Position = UDim2.new(0, x - 6, 0, y)
@@ -282,7 +265,6 @@ local function updateESP()
                         else
                             d.HpBg.Visible = false
                         end
-
                         if d.HL then
                             d.HL.Enabled = Config.ESP.ShowHighlight
                             d.HL.Adornee = char
@@ -312,7 +294,6 @@ fovFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 fovFrame.Visible = false
 fovFrame.ZIndex = 500
 fovFrame.Parent = parentGui
-
 fovStroke = Instance.new("UIStroke", fovFrame)
 fovStroke.Color = Config.Aimbot.FOVColor
 fovStroke.Thickness = 2.5
@@ -337,12 +318,10 @@ local function hasLineOfSight(char)
     if not hrp then return false end
     local origin = Camera.CFrame.Position
     local target = hrp.Position
-
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
     params.FilterDescendantsInstances = {LocalPlayer.Character, char}
     params.IgnoreWater = true
-
     local result = workspace:Raycast(origin, target - origin, params)
     return result == nil
 end
@@ -359,7 +338,6 @@ local function getClosest()
                 if Config.Aimbot.WallCheck then
                     passWallCheck = hasLineOfSight(char)
                 end
-
                 if passWallCheck then
                     local part = (Config.Aimbot.Target == "Head") and char:FindFirstChild("Head") or hrp
                     if part then
@@ -500,7 +478,7 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY (integrado, sem GUI externa) ═══════════
+-- ═══════════ FLY ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
@@ -515,12 +493,14 @@ local function stopFly()
 
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
-
     flyBodyVel, flyBodyGyro = nil, nil
 
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = false end
+    if hum then
+        hum.PlatformStand = false
+        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
 end
 
 local function startFly()
@@ -531,19 +511,22 @@ local function startFly()
     if not (hrp and hum) then return end
 
     hum.PlatformStand = true
+    pcall(function()
+        hum:ChangeState(Enum.HumanoidStateType.Physics)
+    end)
 
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
-    flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    flyBodyVel.P = 1e4
+    flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    flyBodyVel.P = 12500
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
-    flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    flyBodyGyro.P = 1e4
-    flyBodyGyro.D = 100
+    flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    flyBodyGyro.P = 3000
+    flyBodyGyro.D = 500
     flyBodyGyro.CFrame = hrp.CFrame
     flyBodyGyro.Parent = hrp
 
@@ -572,24 +555,24 @@ local function startFly()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
 
-        if hum and not hum.PlatformStand then
+        if hum and hum.PlatformStand == false then
             hum.PlatformStand = true
         end
 
         if not flyBodyVel or not flyBodyVel.Parent then
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
-            flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            flyBodyVel.P = 1e4
+            flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyBodyVel.P = 12500
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
         if not flyBodyGyro or not flyBodyGyro.Parent then
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
-            flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-            flyBodyGyro.P = 1e4
-            flyBodyGyro.D = 100
+            flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            flyBodyGyro.P = 3000
+            flyBodyGyro.D = 500
             flyBodyGyro.Parent = hrp
         end
 
@@ -633,11 +616,13 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (arremessa o OUTRO player em direção aleatória) ═══════════
+-- ═══════════ FLING ═══════════
 flingConn = nil
+flingCooldown = {}
 
 local function setFling(state)
     if flingConn then flingConn:Disconnect() flingConn = nil end
+    flingCooldown = {}
     if not state then return end
 
     flingConn = RunService.Heartbeat:Connect(function()
@@ -654,24 +639,60 @@ local function setFling(state)
                     local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
                     if targetHrp and targetHum and targetHum.Health > 0 then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        if dist < 3.5 then
-                            local randomDir = Vector3.new(
-                                math.random(-100, 100) / 100,
-                                math.random(50, 100) / 100,
-                                math.random(-100, 100) / 100
-                            ).Unit
-                            
-                            targetHrp.AssemblyLinearVelocity = randomDir * 1500
-                            
-                            pcall(function()
-                                targetHum.PlatformStand = true
-                            end)
+                        if dist < 4 then
+                            local now = tick()
+                            if not flingCooldown[plr] or now - flingCooldown[plr] >= 0.15 then
+                                flingCooldown[plr] = now
+                                local randomDir = Vector3.new(
+                                    math.random(-100, 100) / 100,
+                                    math.random(60, 100) / 100,
+                                    math.random(-100, 100) / 100
+                                ).Unit
+                                targetHrp.AssemblyLinearVelocity = randomDir * 900
+                                pcall(function()
+                                    targetHum.PlatformStand = true
+                                end)
+                            end
                         end
                     end
                 end
             end
         end
     end)
+end
+
+-- ═══════════ ANTI-FLING ═══════════
+antiFlingConn = nil
+local function setAntiFling(state)
+    if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
+    if not state then return end
+    antiFlingConn = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local vel = hrp.AssemblyLinearVelocity
+        if vel.Magnitude > 200 then
+            hrp.AssemblyLinearVelocity = vel.Unit * 50
+        end
+    end)
+end
+
+antiAfkConn = nil
+local function setAntiAFK(state)
+    if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
+    if not state then return end
+    if LocalPlayer and LocalPlayer.Idled then
+        antiAfkConn = LocalPlayer.Idled:Connect(function()
+            pcall(function()
+                local vu = game:GetService("VirtualUser")
+                if vu then
+                    vu:CaptureController()
+                    vu:ClickButton2(Vector2.new())
+                end
+            end)
+        end)
+    end
 end
 
 local function setFullbright(state)
@@ -707,40 +728,6 @@ local function setFOVChanger(state)
         Camera.FieldOfView = Config.FOVChanger.Value
     else
         Camera.FieldOfView = 70
-    end
-end
-
--- ═══════════ ANTI-FLING (original) ═══════════
-antiFlingConn = nil
-local function setAntiFling(state)
-    if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
-    if not state then return end
-    antiFlingConn = RunService.Heartbeat:Connect(function()
-        local char = LocalPlayer.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local vel = hrp.AssemblyLinearVelocity
-        if vel.Magnitude > 200 then
-            hrp.AssemblyLinearVelocity = vel.Unit * 50
-        end
-    end)
-end
-
-antiAfkConn = nil
-local function setAntiAFK(state)
-    if antiAfkConn then antiAfkConn:Disconnect() antiAfkConn = nil end
-    if not state then return end
-    if LocalPlayer and LocalPlayer.Idled then
-        antiAfkConn = LocalPlayer.Idled:Connect(function()
-            pcall(function()
-                local vu = game:GetService("VirtualUser")
-                if vu then
-                    vu:CaptureController()
-                    vu:ClickButton2(Vector2.new())
-                end
-            end)
-        end)
     end
 end
 
@@ -866,13 +853,11 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ CÁPSULA ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
 capsule.Size = UDim2.new(0, 220, 0, 44)
 capsule.Position = UDim2.new(0.5, -110, 0, 12)
 capsule.BackgroundColor3 = Color3.fromRGB(12, 10, 18)
-capsule.BackgroundTransparency = 0
 capsule.BorderSizePixel = 0
 capsule.Active = true
 capsule.Visible = false
@@ -886,12 +871,10 @@ capsuleGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 8, 15)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30)),
 })
-capsuleGradient.Rotation = 0
 
 dragZone = Instance.new("TextButton")
 dragZone.Name = "DragZone"
 dragZone.Size = UDim2.new(0, 44, 1, 0)
-dragZone.Position = UDim2.new(0, 0, 0, 0)
 dragZone.BackgroundTransparency = 1
 dragZone.Text = ""
 dragZone.AutoButtonColor = false
@@ -901,7 +884,6 @@ dragZone.Parent = capsule
 Instance.new("UICorner", dragZone).CornerRadius = UDim.new(1, 0)
 
 dragIcon = Instance.new("ImageLabel")
-dragIcon.Name = "DragIcon"
 dragIcon.Size = UDim2.new(0, 24, 0, 24)
 dragIcon.Position = UDim2.new(0.5, -12, 0.5, -12)
 dragIcon.BackgroundTransparency = 1
@@ -911,7 +893,6 @@ dragIcon.ZIndex = 9
 dragIcon.Parent = dragZone
 
 local divider = Instance.new("Frame")
-divider.Name = "Divider"
 divider.Size = UDim2.new(0, 1, 0, 24)
 divider.Position = UDim2.new(0, 44, 0.5, -12)
 divider.BackgroundColor3 = Color3.fromRGB(70, 65, 90)
@@ -925,7 +906,7 @@ capsuleText.Size = UDim2.new(1, -54, 1, 0)
 capsuleText.Position = UDim2.new(0, 44, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
-capsuleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+capsuleText.TextColor3 = Color3.new(1, 1, 1)
 capsuleText.Font = Enum.Font.GothamBold
 capsuleText.TextSize = 16
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
@@ -937,7 +918,6 @@ capsuleGlow = Instance.new("Frame")
 capsuleGlow.Name = "CapsuleGlow"
 capsuleGlow.Size = UDim2.new(0, 220, 0, 44)
 capsuleGlow.Position = UDim2.new(0.5, -110, 0, 12)
-capsuleGlow.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 capsuleGlow.BackgroundTransparency = 1
 capsuleGlow.BorderSizePixel = 0
 capsuleGlow.ZIndex = 7
@@ -951,7 +931,7 @@ glowStroke.Thickness = 1.5
 glowStroke.Transparency = 0
 glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- ═══════════ KEY GUI ═══════════
+-- KEY GUI
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
 keyGui.ResetOnSpawn = false
@@ -1069,7 +1049,7 @@ keyStatus.Parent = keyFrame
 
 discordBtn.MouseButton1Click:Connect(openDiscord)
 
--- ═══════════ MAIN PANEL ═══════════
+-- MAIN PANEL
 main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = NORMAL_SIZE
@@ -1247,7 +1227,6 @@ Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 24)
 
 footerFix = Instance.new("Frame")
 footerFix.Size = UDim2.new(1, 0, 0, 20)
-footerFix.Position = UDim2.new(0, 0, 0, 0)
 footerFix.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
 footerFix.BackgroundTransparency = 0.15
 footerFix.BorderSizePixel = 0
@@ -1454,6 +1433,17 @@ local function makeLabel(card, text, x, width)
     lbl.TextSize = 10
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.ZIndex = 130
+ local function makeLabel(card, text, x, width)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, width or 200, 1, 0)
+    lbl.Position = UDim2.new(0, x or 10, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = TEXT
+    lbl.Font = Enum.Font.GothamMedium
+    lbl.TextSize = 10
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 130
     lbl.Parent = card
     return lbl
 end
@@ -1472,10 +1462,7 @@ local function makeToggle(card, defaultState, callback)
     btn.ZIndex = 130
     btn.Parent = card
     Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-    
-    -- Guarda o estado dentro do botão (pra poder mudar por fora)
     btn:SetAttribute("ToggleState", state)
-    
     btn.MouseButton1Click:Connect(function()
         local newState = not btn:GetAttribute("ToggleState")
         btn:SetAttribute("ToggleState", newState)
@@ -1619,8 +1606,8 @@ local function addNotif(title, desc, duration)
     }):Play()
 
     task.delay(duration, dismiss)
-end
--- ═══════════ PÁGINA HOME ═══════════
+    end
+  -- ═══════════ PÁGINA HOME ═══════════
 homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
 
@@ -2099,7 +2086,6 @@ end)
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK, Fling")
 
--- Referências globais para os botões
 antiFlingToggle = nil
 flingToggle = nil
 
@@ -2122,9 +2108,8 @@ makeLabel(flingCard, "Fling (arremessa players)", 10, 200)
 flingToggle = makeToggle(flingCard, false, function(s)
     Config.Fling.Enabled = s
     setFling(s)
-    
+
     if s then
-        -- Se ATIVOU o Fling → desativa Anti-Fling
         Config.AntiFling.Enabled = false
         setAntiFling(false)
         if antiFlingToggle then
@@ -2134,7 +2119,6 @@ flingToggle = makeToggle(flingCard, false, function(s)
         end
         addNotif("Fling", "Anti-Fling desativado automaticamente.", 4)
     else
-        -- Se DESATIVOU o Fling → reativa Anti-Fling
         Config.AntiFling.Enabled = true
         setAntiFling(true)
         if antiFlingToggle then
@@ -2185,7 +2169,6 @@ aboutLbl.TextWrapped = true
 aboutLbl.ZIndex = 130
 aboutLbl.Parent = aboutCard
 
--- ═══════════ BOTÕES LATERAIS ═══════════
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -2198,8 +2181,6 @@ createTabButton("Servidor", ICONS.Star)
 createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
-
--- ═══════════ BOTÕES DO HEADER ═══════════
 
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
@@ -2264,7 +2245,7 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ═══════════ GLOW RGB ═══════════
+-- ═══════════ GLOW RGB DA CÁPSULA ═══════════
 local glowHue = 0
 RunService.RenderStepped:Connect(function(dt)
     if not capsuleGlow then return end
@@ -2279,7 +2260,7 @@ RunService.RenderStepped:Connect(function(dt)
     if glowStroke then glowStroke.Color = color end
 end)
 
--- ═══════════ DRAG DO PAINEL ═══════════
+-- ═══════════ DRAG DO PAINEL PELO HEADER ═══════════
 local mainDragging = false
 local mainDragStart = nil
 local mainStartPos = nil
@@ -2309,8 +2290,6 @@ RunService.RenderStepped:Connect(function()
         )
     end
 end)
--- ═══════════ MODAL DE FECHAR (estilo Pepi — Opção D) ═══════════
-
 closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
 closeModal.Size = UDim2.new(1, 0, 1, 0)
@@ -2392,7 +2371,6 @@ end)
 cancelBtn.MouseLeave:Connect(function()
     TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
 end)
-
 confirmCloseBtn.MouseEnter:Connect(function()
     TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(180, 120, 255)}):Play()
 end)
@@ -2424,7 +2402,6 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
--- Reset geral
 local function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
@@ -2441,7 +2418,6 @@ local function resetEverything()
             if d.HL then d.HL.Enabled = false end
         end
     end
-
     if hitboxData then
         for _, d in pairs(hitboxData) do
             if d.Frame then d.Frame.Visible = false end
@@ -2454,7 +2430,6 @@ local function resetEverything()
     if flyConn then pcall(function() flyConn:Disconnect() end) flyConn = nil end
     if flyInputConn then pcall(function() flyInputConn:Disconnect() end) flyInputConn = nil end
     if flyInputEndConn then pcall(function() flyInputEndConn:Disconnect() end) flyInputEndConn = nil end
-
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
@@ -2478,18 +2453,15 @@ local function resetEverything()
             Lighting.GlobalShadows = originalLighting.GlobalShadows
         end)
     end
-
     pcall(function()
         if Camera then Camera.FieldOfView = 70 end
     end)
-
     if antiFlingConn then pcall(function() antiFlingConn:Disconnect() end) antiFlingConn = nil end
     if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end) antiAfkConn = nil end
     if fovFrame then fovFrame.Visible = false end
     aimbotActive = false
 end
 
--- Botão "Close Window" — fecha tudo + notificação
 confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.", 3)
     resetEverything()
@@ -2498,7 +2470,6 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     capsuleGlow.Visible = false
     main.Visible = false
     task.wait(0.8)
-
     pcall(function()
         if gui then gui:Destroy() end
         if keyGui then keyGui:Destroy() end
@@ -2532,12 +2503,10 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Botão X — abre o modal
 closeBtn.MouseButton1Click:Connect(function()
     openCloseModal()
 end)
 
--- ═══════════ VALIDAÇÃO DA KEY ═══════════
 local function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == KEY then
@@ -2566,7 +2535,6 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- ═══════════ DRAG DA TELA DE KEY ═══════════
 local keyDragging = false
 local keyDragStart = nil
 local keyStartPos = nil
@@ -2597,10 +2565,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ═══════════ BOOT FINAL ═══════════
 gui.Enabled = false
 keyGui.Enabled = true
 keyFrame.Visible = true
 capsule.Visible = false
 capsuleGlow.Visible = false
-main.Visible = false
+main.Visible = false  
