@@ -478,21 +478,23 @@ local function setSpeed(state)
     end
 end
 
--- FLY
+-- ═══════════ FLY MOBILE (joystick + botões) ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
-flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
-flyInputConn = nil
-flyInputEndConn = nil
+flyUpBtn = nil
+flyDownBtn = nil
+flyGui = nil
 
 local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
-    if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
-    if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
+    if flyGui then flyGui:Destroy() flyGui = nil end
+    flyUpBtn = nil
+    flyDownBtn = nil
+    
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
@@ -528,27 +530,60 @@ local function startFly()
     flyBodyGyro.CFrame = hrp.CFrame
     flyBodyGyro.Parent = hrp
 
-    flyInputConn = UIS.InputBegan:Connect(function(input, gp)
-        if gp then return end
-        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = true
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = true
-        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = true
-        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = true
-        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = true
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = true
-        end
-    end)
+    -- GUI com botões SUBIR / DESCER para celular
+    flyGui = Instance.new("ScreenGui")
+    flyGui.Name = "SlowHub_FlyButtons"
+    flyGui.ResetOnSpawn = false
+    flyGui.IgnoreGuiInset = true
+    flyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    flyGui.DisplayOrder = 9998
+    flyGui.Parent = parentGui
 
-    flyInputEndConn = UIS.InputEnded:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = false
-        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = false
-        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = false
-        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = false
-        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = false
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = false
-        end
-    end)
+    -- Botão SUBIR
+    flyUpBtn = Instance.new("TextButton")
+    flyUpBtn.Size = UDim2.new(0, 60, 0, 60)
+    flyUpBtn.Position = UDim2.new(1, -80, 0.5, -130)
+    flyUpBtn.BackgroundColor3 = Color3.fromRGB(70, 200, 120)
+    flyUpBtn.BackgroundTransparency = 0.2
+    flyUpBtn.Text = "▲"
+    flyUpBtn.TextColor3 = Color3.new(1, 1, 1)
+    flyUpBtn.TextSize = 28
+    flyUpBtn.Font = Enum.Font.GothamBold
+    flyUpBtn.AutoButtonColor = false
+    flyUpBtn.Active = true
+    flyUpBtn.ZIndex = 10
+    flyUpBtn.Parent = flyGui
+    Instance.new("UICorner", flyUpBtn).CornerRadius = UDim.new(1, 0)
 
+    -- Botão DESCER
+    flyDownBtn = Instance.new("TextButton")
+    flyDownBtn.Size = UDim2.new(0, 60, 0, 60)
+    flyDownBtn.Position = UDim2.new(1, -80, 0.5, 70)
+    flyDownBtn.BackgroundColor3 = Color3.fromRGB(230, 80, 90)
+    flyDownBtn.BackgroundTransparency = 0.2
+    flyDownBtn.Text = "▼"
+    flyDownBtn.TextColor3 = Color3.new(1, 1, 1)
+    flyDownBtn.TextSize = 28
+    flyDownBtn.Font = Enum.Font.GothamBold
+    flyDownBtn.AutoButtonColor = false
+    flyDownBtn.Active = true
+    flyDownBtn.ZIndex = 10
+    flyDownBtn.Parent = flyGui
+    Instance.new("UICorner", flyDownBtn).CornerRadius = UDim.new(1, 0)
+
+    -- Estados dos botões
+    local upPressed = false
+    local downPressed = false
+
+    flyUpBtn.MouseButton1Down:Connect(function() upPressed = true end)
+    flyUpBtn.MouseButton1Up:Connect(function() upPressed = false end)
+    flyUpBtn.MouseLeave:Connect(function() upPressed = false end)
+
+    flyDownBtn.MouseButton1Down:Connect(function() downPressed = true end)
+    flyDownBtn.MouseButton1Up:Connect(function() downPressed = false end)
+    flyDownBtn.MouseLeave:Connect(function() downPressed = false end)
+
+    -- Loop principal
     flyConn = RunService.RenderStepped:Connect(function()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
@@ -574,21 +609,27 @@ local function startFly()
             flyBodyGyro.Parent = hrp
         end
 
-        local cam = Camera.CFrame
+        -- Pega a direção do JOYSTICK (funciona no celular)
+        local moveDir = hum.MoveDirection
         local move = Vector3.zero
 
-        if flyKeys.W then move += cam.LookVector end
-        if flyKeys.S then move -= cam.LookVector end
-        if flyKeys.A then move -= cam.RightVector end
-        if flyKeys.D then move += cam.RightVector end
-        if flyKeys.Space then move += Vector3.new(0, 1, 0) end
-        if flyKeys.Shift then move -= Vector3.new(0, 1, 0) end
+        if moveDir.Magnitude > 0 then
+            -- Move na direção do joystick (na horizontal)
+            move = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * Config.Fly.Speed
+        end
 
-        if move.Magnitude > 0 then
-            move = move.Unit * Config.Fly.Speed
+        -- Adiciona subida/descida pelos botões
+        if upPressed then
+            move += Vector3.new(0, Config.Fly.Speed, 0)
+        end
+        if downPressed then
+            move -= Vector3.new(0, Config.Fly.Speed, 0)
         end
 
         flyBodyVel.Velocity = move
+
+        -- Rotação segue a câmera
+        local cam = Camera.CFrame
         flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
     end)
 end
@@ -596,7 +637,7 @@ end
 local function setFly(state)
     if state then
         startFly()
-        addNotif("Fly", "Ativado. W/A/S/D + Space/Shift.", 4)
+        addNotif("Fly", "Use o JOYSTICK para mover + botões ▲▼ para subir/descer.", 5)
     else
         stopFly()
         addNotif("Fly", "Desativado.", 3)
@@ -614,13 +655,11 @@ local function setInfJump(state)
     end)
 end
 
--- FLING
+-- ═══════════ FLING (arremessa o OUTRO player, não você) ═══════════
 flingConn = nil
-flingCooldown = {}
 
 local function setFling(state)
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    flingCooldown = {}
     if not state then return end
 
     flingConn = RunService.Heartbeat:Connect(function()
@@ -635,22 +674,30 @@ local function setFling(state)
                 if targetChar then
                     local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
                     local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
-                    if targetHrp and targetHum and targetHum.Health > 0 then
+                    -- IMPORTANTE: verifica se o alvo é o MESMO que o seu (pra não se arremessar)
+                    if targetHrp and targetHum and targetHum.Health > 0 and targetHrp ~= myHrp then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
                         if dist < 4 then
-                            local now = tick()
-                            if not flingCooldown[plr] or now - flingCooldown[plr] >= 0.15 then
-                                flingCooldown[plr] = now
-                                local randomDir = Vector3.new(
-                                    math.random(-100, 100) / 100,
-                                    math.random(60, 100) / 100,
-                                    math.random(-100, 100) / 100
-                                ).Unit
-                                targetHrp.AssemblyLinearVelocity = randomDir * 900
-                                pcall(function()
-                                    targetHum.PlatformStand = true
-                                end)
-                            end
+                            -- Direção aleatória
+                            local randomDir = Vector3.new(
+                                math.random(-100, 100) / 100,
+                                math.random(80, 150) / 100,
+                                math.random(-100, 100) / 100
+                            ).Unit
+
+                            -- Aplica no HRP DO OUTRO (nunca no seu)
+                            targetHrp.AssemblyLinearVelocity = randomDir * 1500
+
+                            -- Teleporta o alvo pra longe (garante que não volta)
+                            targetHrp.CFrame = targetHrp.CFrame + Vector3.new(
+                                randomDir.X * 30,
+                                50,
+                                randomDir.Z * 30
+                            )
+
+                            pcall(function()
+                                targetHum.PlatformStand = true
+                            end)
                         end
                     end
                 end
