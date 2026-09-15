@@ -2153,11 +2153,264 @@ minBtn.MouseButton1Click:Connect(function()
     capsuleGlow.Visible = true
 end)
 
--- FECHAR — mesma coisa, fecha direto sem modal
-closeBtn.MouseButton1Click:Connect(function()
+-- ═══════════ MODAL DE FECHAR (estilo Pepi) ═══════════
+
+closeModal = Instance.new("Frame")
+closeModal.Name = "CloseModal"
+closeModal.Size = UDim2.new(1, 0, 1, 0)
+closeModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+closeModal.BackgroundTransparency = 0.5
+closeModal.BorderSizePixel = 0
+closeModal.Visible = false
+closeModal.ZIndex = 300
+closeModal.Parent = gui
+
+modalBox = Instance.new("Frame")
+modalBox.Size = UDim2.new(0, 320, 0, 160)
+modalBox.Position = UDim2.new(0.5, -160, 0.5, -80)
+modalBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+modalBox.BorderSizePixel = 0
+modalBox.ZIndex = 301
+modalBox.Parent = closeModal
+Instance.new("UICorner", modalBox).CornerRadius = UDim.new(0, 16)
+
+modalStroke = Instance.new("UIStroke", modalBox)
+modalStroke.Color = PURPLE_BORDER
+modalStroke.Thickness = 1.5
+modalStroke.Transparency = 0.2
+
+modalTitle = Instance.new("TextLabel")
+modalTitle.Size = UDim2.new(1, -32, 0, 24)
+modalTitle.Position = UDim2.new(0, 16, 0, 20)
+modalTitle.BackgroundTransparency = 1
+modalTitle.Text = "Close Window"
+modalTitle.TextColor3 = TEXT
+modalTitle.Font = Enum.Font.GothamBold
+modalTitle.TextSize = 16
+modalTitle.TextXAlignment = Enum.TextXAlignment.Left
+modalTitle.ZIndex = 302
+modalTitle.Parent = modalBox
+
+modalDesc = Instance.new("TextLabel")
+modalDesc.Size = UDim2.new(1, -32, 0, 40)
+modalDesc.Position = UDim2.new(0, 16, 0, 48)
+modalDesc.BackgroundTransparency = 1
+modalDesc.Text = "Are you sure? All features will be disabled."
+modalDesc.TextColor3 = TEXTDIM
+modalDesc.Font = Enum.Font.Gotham
+modalDesc.TextSize = 12
+modalDesc.TextXAlignment = Enum.TextXAlignment.Left
+modalDesc.TextWrapped = true
+modalDesc.ZIndex = 302
+modalDesc.Parent = modalBox
+
+cancelBtn = Instance.new("TextButton")
+cancelBtn.Size = UDim2.new(0, 130, 0, 32)
+cancelBtn.Position = UDim2.new(0, 16, 1, -48)
+cancelBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+cancelBtn.Text = "Cancel"
+cancelBtn.TextColor3 = TEXT
+cancelBtn.Font = Enum.Font.GothamBold
+cancelBtn.TextSize = 12
+cancelBtn.AutoButtonColor = false
+cancelBtn.ZIndex = 302
+cancelBtn.Parent = modalBox
+Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
+
+confirmCloseBtn = Instance.new("TextButton")
+confirmCloseBtn.Size = UDim2.new(0, 130, 0, 32)
+confirmCloseBtn.Position = UDim2.new(1, -146, 1, -48)
+confirmCloseBtn.BackgroundColor3 = ACCENT
+confirmCloseBtn.Text = "Close Window"
+confirmCloseBtn.TextColor3 = Color3.new(1, 1, 1)
+confirmCloseBtn.Font = Enum.Font.GothamBold
+confirmCloseBtn.TextSize = 12
+confirmCloseBtn.AutoButtonColor = false
+confirmCloseBtn.ZIndex = 302
+confirmCloseBtn.Parent = modalBox
+Instance.new("UICorner", confirmCloseBtn).CornerRadius = UDim.new(0, 8)
+
+cancelBtn.MouseEnter:Connect(function()
+    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+end)
+cancelBtn.MouseLeave:Connect(function()
+    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
+end)
+
+confirmCloseBtn.MouseEnter:Connect(function()
+    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(180, 120, 255)}):Play()
+end)
+confirmCloseBtn.MouseLeave:Connect(function()
+    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = ACCENT}):Play()
+end)
+
+-- Abrir modal com animação
+local function openCloseModal()
+    closeModal.Visible = true
+    closeModal.BackgroundTransparency = 1
+    modalBox.Size = UDim2.new(0, 260, 0, 130)
+    modalBox.Position = UDim2.new(0.5, -130, 0.5, -65)
+    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 0.5}):Play()
+    TweenService:Create(modalBox, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 320, 0, 160),
+        Position = UDim2.new(0.5, -160, 0.5, -80)
+    }):Play()
+end
+
+-- Fechar modal com animação
+local function closeCloseModal()
+    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(modalBox, TweenInfo.new(0.2), {
+        Size = UDim2.new(0, 260, 0, 130),
+        Position = UDim2.new(0.5, -130, 0.5, -65)
+    }):Play()
+    task.wait(0.22)
+    closeModal.Visible = false
+end
+
+cancelBtn.MouseButton1Click:Connect(closeCloseModal)
+
+-- Reset de tudo ao confirmar fechamento
+local function resetEverything()
+    for section, data in pairs(Config) do
+        if type(data) == "table" and data.Enabled ~= nil then
+            data.Enabled = false
+        end
+    end
+
+    if espData then
+        for _, d in pairs(espData) do
+            if d.Box then d.Box.Visible = false end
+            if d.Name then d.Name.Visible = false end
+            if d.Dist then d.Dist.Visible = false end
+            if d.HpBg then d.HpBg.Visible = false end
+            if d.HL then d.HL.Enabled = false end
+        end
+    end
+
+    if hitboxData then
+        for _, d in pairs(hitboxData) do
+            if d.Frame then d.Frame.Visible = false end
+        end
+    end
+
+    if noclipConn then
+        pcall(function() noclipConn:Disconnect() end)
+        noclipConn = nil
+    end
+
+    if speedConn then
+        pcall(function() speedConn:Disconnect() end)
+        speedConn = nil
+    end
+
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = 16 end
+
+    pcall(function()
+        if flyConn then flyConn:Disconnect() flyConn = nil end
+        if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
+        if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
+        if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+        if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+        if flyLinVel and flyLinVel.Parent then flyLinVel:Destroy() end
+        if flyAlign and flyAlign.Parent then flyAlign:Destroy() end
+        if flyAttachment and flyAttachment.Parent then flyAttachment:Destroy() end
+        flyBodyVel, flyBodyGyro = nil, nil
+        flyLinVel, flyAlign, flyAttachment = nil, nil, nil
+        if hum then hum.PlatformStand = false end
+    end)
+
+    if infJumpConn then
+        pcall(function() infJumpConn:Disconnect() end)
+        infJumpConn = nil
+    end
+
+    if originalLighting and originalLighting.Ambient then
+        pcall(function()
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.ClockTime = originalLighting.ClockTime
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end)
+    end
+
+    pcall(function()
+        if Camera then Camera.FieldOfView = 70 end
+    end)
+
+    if antiFlingConn then
+        pcall(function() antiFlingConn:Disconnect() end)
+        antiFlingConn = nil
+    end
+
+    if antiAfkConn then
+        pcall(function() antiAfkConn:Disconnect() end)
+        antiAfkConn = nil
+    end
+
+    if fovFrame then fovFrame.Visible = false end
+
+    aimbotActive = false
+end
+
+-- Botão "Close Window" — fecha o script TOTALMENTE
+confirmCloseBtn.MouseButton1Click:Connect(function()
+    resetEverything()
+    closeCloseModal()
+    capsule.Visible = false
+    capsuleGlow.Visible = false
     main.Visible = false
-    capsule.Visible = true
-    capsuleGlow.Visible = true
+    task.wait(0.3)
+
+    pcall(function()
+        if gui then gui:Destroy() end
+        if keyGui then keyGui:Destroy() end
+    end)
+    pcall(function()
+        if espFolder and espFolder.Parent then espFolder:Destroy() end
+        if hitboxFolder and hitboxFolder.Parent then hitboxFolder:Destroy() end
+        if fovFrame and fovFrame.Parent then fovFrame:Destroy() end
+    end)
+    pcall(function()
+        if noclipConn then noclipConn:Disconnect() end
+        if speedConn then speedConn:Disconnect() end
+        if flyConn then flyConn:Disconnect() end
+        if flyInputConn then flyInputConn:Disconnect() end
+        if flyInputEndConn then flyInputEndConn:Disconnect() end
+        if infJumpConn then infJumpConn:Disconnect() end
+        if antiFlingConn then antiFlingConn:Disconnect() end
+        if antiAfkConn then antiAfkConn:Disconnect() end
+    end)
+    pcall(function()
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = 16
+            hum.PlatformStand = false
+        end
+    end)
+    pcall(function()
+        if originalLighting and originalLighting.Ambient then
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.ClockTime = originalLighting.ClockTime
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end
+    end)
+    pcall(function()
+        if Camera then Camera.FieldOfView = 70 end
+    end)
+end)
+
+-- Botão X — abre o modal (em vez de fechar direto)
+closeBtn.MouseButton1Click:Connect(function()
+    openCloseModal()
 end)
 
 -- MAXIMIZAR
