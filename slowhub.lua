@@ -2330,9 +2330,10 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ═══════════ DRAG CÁPSULA (só move se ARRASTAR) ═══════════
+-- ═══════════ DRAG CÁPSULA (só move se o mouse REALMENTE mover) ═══════════
+local Mouse = LocalPlayer:GetMouse()
 local capsuleDragHolding = false
-local capsuleDragStart = nil
+local capsuleDragStartMouse = nil
 local capsuleStartPos = nil
 local capsuleMovedDistance = 0
 
@@ -2340,32 +2341,56 @@ dragZone.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         capsuleDragHolding = true
-        capsuleDragStart = input.Position
+        capsuleDragStartMouse = Vector2.new(Mouse.X, Mouse.Y)
         capsuleStartPos = capsule.Position
         capsuleMovedDistance = 0
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 capsuleDragHolding = false
-                capsuleDragStart = nil
+                capsuleDragStartMouse = nil
             end
         end)
     end
 end)
 
-RunService.RenderStepped:Connect(function()
-    if capsuleDragHolding and capsuleDragStart then
-        local mousePos = UIS:GetMouseLocation()
-        local delta = Vector2.new(mousePos.X - capsuleDragStart.X, mousePos.Y - capsuleDragStart.Y)
-        capsuleMovedDistance = math.sqrt(delta.X * delta.X + delta.Y * delta.Y)
+-- 🔥 Só atualiza a posição quando o mouse REALMENTE se move
+Mouse.Move:Connect(function()
+    if not capsuleDragHolding or not capsuleDragStartMouse then return end
 
-        -- 🔥 Só move se arrastar mais de 4px (não pula ao clicar)
-        if capsuleMovedDistance > 4 then
-            capsule.Position = UDim2.new(
-                capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
-                capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
-            )
-        end
+    local nowX = Mouse.X
+    local nowY = Mouse.Y
+    local delta = Vector2.new(nowX - capsuleDragStartMouse.X, nowY - capsuleDragStartMouse.Y)
+    capsuleMovedDistance = math.sqrt(delta.X * delta.X + delta.Y * delta.Y)
+
+    -- Só move se arrastar mais de 4px
+    if capsuleMovedDistance > 4 then
+        capsule.Position = UDim2.new(
+            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
+            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Abrir painel: clicar na cápsula (fora da zona da seta)
+capsule.InputEnded:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    if not capsule.Visible then return end
+
+    task.wait(0.05)
+    if capsuleDragHolding then return end
+    if capsuleMovedDistance > 4 then return end
+
+    local m = Vector2.new(Mouse.X, Mouse.Y)
+    local abs = dragZone.AbsolutePosition
+    local sz = dragZone.AbsoluteSize
+    local onZone = m.X >= abs.X and m.X <= abs.X + sz.X
+              and m.Y >= abs.Y and m.Y <= abs.Y + sz.Y
+
+    if not onZone then
+        capsule.Visible = false
+        main.Visible = true
     end
 end)
 
