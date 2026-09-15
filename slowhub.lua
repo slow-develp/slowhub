@@ -1606,7 +1606,8 @@ local function addNotif(title, desc, duration)
     }):Play()
 
     task.delay(duration, dismiss)
-    end
+  end
+    
   -- ═══════════ PÁGINA HOME ═══════════
 homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
