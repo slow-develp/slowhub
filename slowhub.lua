@@ -81,7 +81,7 @@ Config = {
     Fly = {Enabled=false, Speed=60, VerticalSpeed=40},
     Fullbright = {Enabled=false},
     FOVChanger = {Enabled=false, Value=70},
-    AntiFling = {Enabled=false},
+    AntiFling = {Enabled=true},
     AntiAFK = {Enabled=false}
 }
 local function safeChar(plr)
@@ -821,6 +821,14 @@ local function openDiscord()
         end
     end)
 end
+
+-- 🔥 Ativa Anti-Fling por padrão (vem habilitado)
+task.spawn(function()
+    task.wait(1)
+    if Config.AntiFling.Enabled then
+        pcall(setAntiFling, true)
+    end
+end)
 gui = Instance.new("ScreenGui")
 gui.Name = "SlowHub"
 gui.ResetOnSpawn = false
@@ -841,12 +849,12 @@ local maxH = math.min(600, vpSize.Y * 0.80)
 NORMAL_SIZE = UDim2.new(0, 500, 0, 340)
 MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 
--- ═══════════ CÁPSULA ESTILO PEPIGUZMAN ═══════════
+-- ═══════════ CÁPSULA IDÊNTICA AO PEPI ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
-capsule.Size = UDim2.new(0, 260, 0, 34)
-capsule.Position = UDim2.new(0.5, -130, 0, 12)
-capsule.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
+capsule.Size = UDim2.new(0, 200, 0, 44)
+capsule.Position = UDim2.new(0.5, -100, 0, 12)
+capsule.BackgroundColor3 = Color3.fromRGB(12, 10, 18)
 capsule.BackgroundTransparency = 0
 capsule.BorderSizePixel = 0
 capsule.Active = true
@@ -856,51 +864,49 @@ capsule.Parent = gui
 Instance.new("UICorner", capsule).CornerRadius = UDim.new(1, 0)
 
 local capsuleStroke = Instance.new("UIStroke", capsule)
-capsuleStroke.Color = Color3.fromRGB(60, 60, 70)
-capsuleStroke.Thickness = 1
-capsuleStroke.Transparency = 0.2
+capsuleStroke.Color = Color3.fromRGB(130, 70, 220)
+capsuleStroke.Thickness = 2
+capsuleStroke.Transparency = 0
 
--- Zona da seta (esquerda) — 36px
-dragZone = Instance.new("Frame")
+local capsuleGradient = Instance.new("UIGradient", capsule)
+capsuleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 15, 30)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 8, 15)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30)),
+})
+capsuleGradient.Rotation = 0
+
+-- Zona da seta como TextButton (captura input garantido)
+dragZone = Instance.new("TextButton")
 dragZone.Name = "DragZone"
-dragZone.Size = UDim2.new(0, 36, 1, 0)
+dragZone.Size = UDim2.new(0, 40, 1, 0)
 dragZone.Position = UDim2.new(0, 0, 0, 0)
 dragZone.BackgroundTransparency = 1
-dragZone.BorderSizePixel = 0
+dragZone.Text = ""
+dragZone.AutoButtonColor = false
+dragZone.Active = true
 dragZone.ZIndex = 8
 dragZone.Parent = capsule
+Instance.new("UICorner", dragZone).CornerRadius = UDim.new(1, 0)
 
--- Ícone da seta (20×20, sem círculo cinza)
 dragIcon = Instance.new("ImageLabel")
 dragIcon.Name = "DragIcon"
 dragIcon.Size = UDim2.new(0, 20, 0, 20)
 dragIcon.Position = UDim2.new(0.5, -10, 0.5, -10)
 dragIcon.BackgroundTransparency = 1
 dragIcon.Image = "rbxassetid://79111374854903"
-dragIcon.ImageColor3 = Color3.fromRGB(200, 200, 210)
+dragIcon.ImageColor3 = Color3.fromRGB(200, 200, 205)
 dragIcon.ZIndex = 9
 dragIcon.Parent = dragZone
 
--- Linha divisória
-local divider = Instance.new("Frame")
-divider.Name = "Divider"
-divider.Size = UDim2.new(0, 1, 0, 22)
-divider.Position = UDim2.new(0, 36, 0.5, -11)
-divider.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-divider.BackgroundTransparency = 0.15
-divider.BorderSizePixel = 0
-divider.ZIndex = 6
-divider.Parent = capsule
-
--- Texto centralizado
 capsuleText = Instance.new("TextLabel")
-capsuleText.Size = UDim2.new(1, -42, 1, 0)
-capsuleText.Position = UDim2.new(0, 36, 0, 0)
+capsuleText.Size = UDim2.new(1, -50, 1, 0)
+capsuleText.Position = UDim2.new(0, 40, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
-capsuleText.TextColor3 = Color3.fromRGB(240, 240, 250)
-capsuleText.Font = Enum.Font.GothamMedium
-capsuleText.TextSize = 13
+capsuleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+capsuleText.Font = Enum.Font.GothamBold
+capsuleText.TextSize = 16
 capsuleText.TextXAlignment = Enum.TextXAlignment.Center
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
@@ -1979,7 +1985,7 @@ makeToggle(hbShowCard, false, function(s)
     Config.Hitbox.ShowBox = s
 end)
 
--- ========== MIRA (com WallCheck) ==========
+-- ========== MIRA ==========
 miraPage = createPage("Mira")
 addPageTitle(miraPage, "Mira", "Aimbot, FOV, WallCheck")
 
@@ -2036,12 +2042,13 @@ makeToggle(fovChangeCard, false, function(s)
     setFOVChanger(s)
 end)
 
+-- ========== ANTI (Anti-Fling já vem ON) ==========
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK")
 
 afCard = makeCard(antiPage, 56, 32)
 makeLabel(afCard, "Anti-Fling", 10, 200)
-makeToggle(afCard, false, function(s)
+makeToggle(afCard, true, function(s)
     Config.AntiFling.Enabled = s
     setAntiFling(s)
 end)
@@ -2311,89 +2318,53 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ═══════════ DRAG CÁPSULA via Mouse (funciona 100% no Delta) ═══════════
-local Mouse = LocalPlayer:GetMouse()
+-- ═══════════ DRAG CÁPSULA (via dragZone TextButton) ═══════════
+local capsuleDragActive = false
+local capsuleDragStart = nil
+local capsuleStartPos = nil
 
-local capsuleDragging = false
-local capsuleDragStartX, capsuleDragStartY = 0, 0
-local capsuleStartOffsetX, capsuleStartOffsetY = 0, 0
+dragZone.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        capsuleDragActive = true
+        capsuleDragStart = input.Position
+        capsuleStartPos = capsule.Position
 
-local function pointInDragZone()
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                capsuleDragActive = false
+            end
+        end)
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if capsuleDragActive and capsuleDragStart then
+        local mousePos = UIS:GetMouseLocation()
+        local delta = Vector2.new(mousePos.X - capsuleDragStart.X, mousePos.Y - capsuleDragStart.Y)
+        capsule.Position = UDim2.new(
+            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
+            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Abrir painel: clicar na cápsula (fora da zona da seta)
+capsule.InputEnded:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    if not capsule.Visible then return end
+
+    task.wait(0.05)
+    if capsuleDragActive then return end
+
+    local mousePos = UIS:GetMouseLocation()
     local abs = dragZone.AbsolutePosition
     local sz = dragZone.AbsoluteSize
-    return Mouse.X >= abs.X and Mouse.X <= abs.X + sz.X
-       and Mouse.Y >= abs.Y and Mouse.Y <= abs.Y + sz.Y
-end
+    local onZone = mousePos.X >= abs.X and mousePos.X <= abs.X + sz.X
+              and mousePos.Y >= abs.Y and mousePos.Y <= abs.Y + sz.Y
 
-local function pointInCapsule()
-    local abs = capsule.AbsolutePosition
-    local sz = capsule.AbsoluteSize
-    return Mouse.X >= abs.X and Mouse.X <= abs.X + sz.X
-       and Mouse.Y >= abs.Y and Mouse.Y <= abs.Y + sz.Y
-end
-
-Mouse.Button1Down:Connect(function()
-    if not capsule.Visible then return end
-    if pointInDragZone() then
-        capsuleDragging = true
-        capsuleDragStartX = Mouse.X
-        capsuleDragStartY = Mouse.Y
-        capsuleStartOffsetX = capsule.Position.X.Offset
-        capsuleStartOffsetY = capsule.Position.Y.Offset
-    end
-end)
-
-Mouse.Move:Connect(function()
-    if not capsuleDragging then return end
-    local dx = Mouse.X - capsuleDragStartX
-    local dy = Mouse.Y - capsuleDragStartY
-    capsule.Position = UDim2.new(
-        capsule.Position.X.Scale, capsuleStartOffsetX + dx,
-        capsule.Position.Y.Scale, capsuleStartOffsetY + dy
-    )
-end)
-
-Mouse.Button1Up:Connect(function()
-    if not capsule.Visible then return end
-
-    if capsuleDragging then
-        capsuleDragging = false
-        return
-    end
-
-    -- Se soltou FORA da zona da seta mas DENTRO da cápsula = abre painel
-    if pointInCapsule() and not pointInDragZone() then
-        capsule.Visible = false
-        main.Visible = true
-    end
-end)
-
--- Reforço com UIS (pra mobile/touch)
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not capsule.Visible then return end
-    if capsuleDragging then return end
-
-    if pointInDragZone() then
-        capsuleDragging = true
-        capsuleDragStartX = Mouse.X
-        capsuleDragStartY = Mouse.Y
-        capsuleStartOffsetX = capsule.Position.X.Offset
-        capsuleStartOffsetY = capsule.Position.Y.Offset
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType ~= Enum.UserInputType.Touch then return end
-    if not capsule.Visible then return end
-
-    if capsuleDragging then
-        capsuleDragging = false
-        return
-    end
-
-    if pointInCapsule() and not pointInDragZone() then
+    if not onZone then
         capsule.Visible = false
         main.Visible = true
     end
@@ -2401,40 +2372,31 @@ end)
 
 -- ========== DRAG MAIN (pelo header) ==========
 local mainDragging = false
-local mainDragStartX, mainDragStartY = 0, 0
-local mainStartOffsetX, mainStartOffsetY = 0, 0
+local mainDragStart = nil
+local mainStartPos = nil
 
-local function pointInHeader()
-    local abs = header.AbsolutePosition
-    local sz = header.AbsoluteSize
-    return Mouse.X >= abs.X and Mouse.X <= abs.X + sz.X
-       and Mouse.Y >= abs.Y and Mouse.Y <= abs.Y + sz.Y
-end
-
-Mouse.Button1Down:Connect(function()
-    if not main.Visible then return end
-    if pointInHeader() then
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = true
-        mainDragStartX = Mouse.X
-        mainDragStartY = Mouse.Y
-        mainStartOffsetX = main.Position.X.Offset
-        mainStartOffsetY = main.Position.Y.Offset
+        mainDragStart = input.Position
+        mainStartPos = main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mainDragging = false
+            end
+        end)
     end
 end)
 
-Mouse.Move:Connect(function()
-    if not mainDragging then return end
-    local dx = Mouse.X - mainDragStartX
-    local dy = Mouse.Y - mainDragStartY
-    main.Position = UDim2.new(
-        main.Position.X.Scale, mainStartOffsetX + dx,
-        main.Position.Y.Scale, mainStartOffsetY + dy
-    )
-end)
-
-Mouse.Button1Up:Connect(function()
-    if mainDragging then
-        mainDragging = false
+RunService.RenderStepped:Connect(function()
+    if mainDragging and mainDragStart then
+        local delta = UIS:GetMouseLocation() - mainDragStart
+        main.Position = UDim2.new(
+            mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X,
+            mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y
+        )
     end
 end)
 
@@ -2492,40 +2454,31 @@ end)
 
 -- ========== DRAG DA TELA DE KEY ==========
 local keyDragging = false
-local keyDragStartX, keyDragStartY = 0, 0
-local keyStartOffsetX, keyStartOffsetY = 0, 0
+local keyDragStart = nil
+local keyStartPos = nil
 
-local function pointInKey()
-    local abs = keyFrame.AbsolutePosition
-    local sz = keyFrame.AbsoluteSize
-    return Mouse.X >= abs.X and Mouse.X <= abs.X + sz.X
-       and Mouse.Y >= abs.Y and Mouse.Y <= abs.Y + sz.Y
-end
-
-Mouse.Button1Down:Connect(function()
-    if not keyFrame.Visible then return end
-    if pointInKey() then
+keyFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
         keyDragging = true
-        keyDragStartX = Mouse.X
-        keyDragStartY = Mouse.Y
-        keyStartOffsetX = keyFrame.Position.X.Offset
-        keyStartOffsetY = keyFrame.Position.Y.Offset
+        keyDragStart = input.Position
+        keyStartPos = keyFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                keyDragging = false
+            end
+        end)
     end
 end)
 
-Mouse.Move:Connect(function()
-    if not keyDragging then return end
-    local dx = Mouse.X - keyDragStartX
-    local dy = Mouse.Y - keyDragStartY
-    keyFrame.Position = UDim2.new(
-        keyFrame.Position.X.Scale, keyStartOffsetX + dx,
-        keyFrame.Position.Y.Scale, keyStartOffsetY + dy
-    )
-end)
-
-Mouse.Button1Up:Connect(function()
-    if keyDragging then
-        keyDragging = false
+RunService.RenderStepped:Connect(function()
+    if keyDragging and keyDragStart then
+        local delta = UIS:GetMouseLocation() - keyDragStart
+        keyFrame.Position = UDim2.new(
+            keyStartPos.X.Scale, keyStartPos.X.Offset + delta.X,
+            keyStartPos.Y.Scale, keyStartPos.Y.Offset + delta.Y
+        )
     end
 end)
 
