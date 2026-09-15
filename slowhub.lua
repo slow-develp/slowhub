@@ -501,27 +501,127 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY v4 INTEGRADO ═══════════
-flyScriptLoaded = false
+-- ═══════════ FLY (integrado no menu, sem GUI externa) ═══════════
+flyConn = nil
+flyBodyVel = nil
+flyBodyGyro = nil
+flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
+flyInputConn = nil
+flyInputEndConn = nil
+
+local function stopFly()
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
+    if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
+
+    if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+    if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+
+    flyBodyVel, flyBodyGyro = nil, nil
+
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.PlatformStand = false end
+end
+
+local function startFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not (hrp and hum) then return end
+
+    hum.PlatformStand = true
+
+    -- BodyVelocity (movimento)
+    flyBodyVel = Instance.new("BodyVelocity")
+    flyBodyVel.Name = "SlowHub_FlyVel"
+    flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    flyBodyVel.P = 1e5
+    flyBodyVel.Velocity = Vector3.zero
+    flyBodyVel.Parent = hrp
+
+    -- BodyGyro (rotação)
+    flyBodyGyro = Instance.new("BodyGyro")
+    flyBodyGyro.Name = "SlowHub_FlyGyro"
+    flyBodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    flyBodyGyro.P = 1e5
+    flyBodyGyro.D = 100
+    flyBodyGyro.CFrame = hrp.CFrame
+    flyBodyGyro.Parent = hrp
+
+    -- Input de teclas
+    flyInputConn = UIS.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = true
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = true
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = true
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = true
+        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = true
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = true
+        end
+    end)
+
+    flyInputEndConn = UIS.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = false
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = false
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = false
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = false
+        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = false
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = false
+        end
+    end)
+
+    -- Loop principal
+    flyConn = RunService.RenderStepped:Connect(function()
+        if not Config.Fly.Enabled then return end
+        if not (hrp and hrp.Parent) then return end
+
+        if hum and not hum.PlatformStand then
+            hum.PlatformStand = true
+        end
+
+        if not flyBodyVel or not flyBodyVel.Parent then
+            flyBodyVel = Instance.new("BodyVelocity")
+            flyBodyVel.Name = "SlowHub_FlyVel"
+            flyBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+            flyBodyVel.P = 1e5
+            flyBodyVel.Velocity = Vector3.zero
+            flyBodyVel.Parent = hrp
+        end
+        if not flyBodyGyro or not flyBodyGyro.Parent then
+            flyBodyGyro = Instance.new("BodyGyro")
+            flyBodyGyro.Name = "SlowHub_FlyGyro"
+            flyBodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+            flyBodyGyro.P = 1e5
+            flyBodyGyro.D = 100
+            flyBodyGyro.Parent = hrp
+        end
+
+        local cam = Camera.CFrame
+        local move = Vector3.zero
+
+        if flyKeys.W then move += cam.LookVector end
+        if flyKeys.S then move -= cam.LookVector end
+        if flyKeys.A then move -= cam.RightVector end
+        if flyKeys.D then move += cam.RightVector end
+        if flyKeys.Space then move += Vector3.new(0, 1, 0) end
+        if flyKeys.Shift then move -= Vector3.new(0, 1, 0) end
+
+        if move.Magnitude > 0 then
+            move = move.Unit * Config.Fly.Speed
+        end
+
+        flyBodyVel.Velocity = move
+        flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
+    end)
+end
 
 local function setFly(state)
     if state then
-        if not flyScriptLoaded then
-            local success = pcall(function()
-                loadstring(game:HttpGet(FLY_URL))()
-            end)
-            if success then
-                flyScriptLoaded = true
-                task.wait(0.5)
-                addNotif("Fly", "Use o botão 'VOAR' do Fly v4 ou aperte F.", 5)
-            else
-                addNotif("Fly", "Erro ao carregar o Fly v4.", 5)
-            end
-        else
-            addNotif("Fly", "Fly v4 já está aberto.", 3)
-        end
+        startFly()
     else
-        addNotif("Fly", "Use o botão 'VOAR' do Fly v4 para desativar.", 5)
+        stopFly()
     end
 end
 
