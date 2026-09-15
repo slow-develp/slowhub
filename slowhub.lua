@@ -53,7 +53,6 @@ local PURPLE_BORDER = Color3.fromRGB(130, 70, 220)
 local KEY = "SlowHubVIP"
 local DISCORD_LINK = "https://discord.com/users/tav.x"
 local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
-local FLY_URL = "https://raw.githubusercontent.com/Cat558-uz/fly-v4-better/refs/heads/main/FlyV4_Final.lua"
 
 ICONS = {
     Home = "rbxassetid://111637692403997",
@@ -79,7 +78,7 @@ Config = {
     Noclip = {Enabled=false},
     Speed = {Enabled=false, Value=32},
     InfiniteJump = {Enabled=false},
-    Fly = {Enabled=false, Speed=60, VerticalSpeed=40},
+    Fly = {Enabled=false, Speed=60},
     Fullbright = {Enabled=false},
     FOVChanger = {Enabled=false, Value=70},
     AntiFling = {Enabled=true},
@@ -501,86 +500,128 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY v4 (recarrega ao ativar) ═══════════
-flyActive = false
+-- ═══════════ FLY (integrado, sem GUI externa) ═══════════
+flyConn = nil
+flyBodyVel = nil
+flyBodyGyro = nil
+flyKeys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
+flyInputConn = nil
+flyInputEndConn = nil
 
--- Função que encontra a GUI do Fly v4 em qualquer lugar
-local function findFlyV4Gui()
-    local found = nil
-    pcall(function()
-        for _, g in pairs(game:GetService("CoreGui"):GetChildren()) do
-            if g.Name == "FlyV4" then found = g end
-        end
-        for _, g in pairs(LocalPlayer.PlayerGui:GetChildren()) do
-            if g.Name == "FlyV4" then found = g end
-        end
-    end)
-    return found
+local function stopFly()
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    if flyInputConn then flyInputConn:Disconnect() flyInputConn = nil end
+    if flyInputEndConn then flyInputEndConn:Disconnect() flyInputEndConn = nil end
+
+    if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+    if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+
+    flyBodyVel, flyBodyGyro = nil, nil
+
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.PlatformStand = false end
 end
 
--- Função que aperta a tecla F
-local function pressF()
-    pcall(function()
-        local vim = game:GetService("VirtualInputManager")
-        vim:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.05)
-        vim:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+local function startFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not (hrp and hum) then return end
+
+    hum.PlatformStand = true
+
+    flyBodyVel = Instance.new("BodyVelocity")
+    flyBodyVel.Name = "SlowHub_FlyVel"
+    flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    flyBodyVel.P = 1e4
+    flyBodyVel.Velocity = Vector3.zero
+    flyBodyVel.Parent = hrp
+
+    flyBodyGyro = Instance.new("BodyGyro")
+    flyBodyGyro.Name = "SlowHub_FlyGyro"
+    flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    flyBodyGyro.P = 1e4
+    flyBodyGyro.D = 100
+    flyBodyGyro.CFrame = hrp.CFrame
+    flyBodyGyro.Parent = hrp
+
+    flyInputConn = UIS.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = true
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = true
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = true
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = true
+        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = true
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = true
+        end
+    end)
+
+    flyInputEndConn = UIS.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then flyKeys.W = false
+        elseif input.KeyCode == Enum.KeyCode.A then flyKeys.A = false
+        elseif input.KeyCode == Enum.KeyCode.S then flyKeys.S = false
+        elseif input.KeyCode == Enum.KeyCode.D then flyKeys.D = false
+        elseif input.KeyCode == Enum.KeyCode.Space then flyKeys.Space = false
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then flyKeys.Shift = false
+        end
+    end)
+
+    flyConn = RunService.RenderStepped:Connect(function()
+        if not Config.Fly.Enabled then return end
+        if not (hrp and hrp.Parent) then return end
+
+        if hum and not hum.PlatformStand then
+            hum.PlatformStand = true
+        end
+
+        if not flyBodyVel or not flyBodyVel.Parent then
+            flyBodyVel = Instance.new("BodyVelocity")
+            flyBodyVel.Name = "SlowHub_FlyVel"
+            flyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            flyBodyVel.P = 1e4
+            flyBodyVel.Velocity = Vector3.zero
+            flyBodyVel.Parent = hrp
+        end
+        if not flyBodyGyro or not flyBodyGyro.Parent then
+            flyBodyGyro = Instance.new("BodyGyro")
+            flyBodyGyro.Name = "SlowHub_FlyGyro"
+            flyBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+            flyBodyGyro.P = 1e4
+            flyBodyGyro.D = 100
+            flyBodyGyro.Parent = hrp
+        end
+
+        local cam = Camera.CFrame
+        local move = Vector3.zero
+
+        if flyKeys.W then move += cam.LookVector end
+        if flyKeys.S then move -= cam.LookVector end
+        if flyKeys.A then move -= cam.RightVector end
+        if flyKeys.D then move += cam.RightVector end
+        if flyKeys.Space then move += Vector3.new(0, 1, 0) end
+        if flyKeys.Shift then move -= Vector3.new(0, 1, 0) end
+
+        if move.Magnitude > 0 then
+            move = move.Unit * Config.Fly.Speed
+        end
+
+        flyBodyVel.Velocity = move
+        flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
     end)
 end
 
 local function setFly(state)
     if state then
-        -- Recarrega o Fly v4 sempre que ativar
-        local success = pcall(function()
-            loadstring(game:HttpGet(FLY_URL))()
-        end)
-        
-        if success then
-            flyActive = true
-            task.wait(1.5)
-            
-            -- Destrói a GUI do Fly v4 (não precisa dela)
-            local flyGui = findFlyV4Gui()
-            if flyGui then
-                flyGui:Destroy()
-            end
-            
-            -- Aperta F pra ativar o voo
-            task.wait(0.3)
-            pressF()
-            
-            addNotif("Fly", "Fly ativado. W/A/S/D para voar.", 4)
-        else
-            addNotif("Fly", "Erro ao carregar o Fly v4.", 5)
-        end
+        startFly()
+        addNotif("Fly", "Ativado. W/A/S/D + Space/Shift.", 4)
     else
-        -- Desativa: aperta F pra desligar o voo + limpa resíduos
-        flyActive = false
-        
-        -- Aperta F (desliga o voo)
-        pressF()
-        
-        -- Destrói a GUI caso ainda exista
-        task.wait(0.1)
-        local flyGui = findFlyV4Gui()
-        if flyGui then
-            flyGui:Destroy()
-        end
-        
-        -- Reseta o personagem (caso esteja voando)
-        pcall(function()
-            local char = LocalPlayer.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.PlatformStand = false
-                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-            end
-        end)
-        
-        addNotif("Fly", "Fly desativado.", 3)
+        stopFly()
+        addNotif("Fly", "Desativado.", 3)
     end
 end
-            
+
 infJumpConn = nil
 local function setInfJump(state)
     if infJumpConn then infJumpConn:Disconnect() infJumpConn = nil end
@@ -613,17 +654,13 @@ local function setFling(state)
                     local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
                     if targetHrp and targetHum and targetHum.Health > 0 then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        
-                        -- Só ativa se o player estiver ENCOSTANDO em você (dist < 4)
-                        if dist < 4 then
-                            -- Direção ALEATÓRIA (pra todos os lados)
+                        if dist < 3.5 then
                             local randomDir = Vector3.new(
                                 math.random(-100, 100) / 100,
-                                math.random(20, 100) / 100,
+                                math.random(50, 100) / 100,
                                 math.random(-100, 100) / 100
                             ).Unit
                             
-                            -- Arremessa o OUTRO player (não você!)
                             targetHrp.AssemblyLinearVelocity = randomDir * 1500
                             
                             pcall(function()
@@ -673,7 +710,7 @@ local function setFOVChanger(state)
     end
 end
 
--- ═══════════ ANTI-FLING (original, sem mudanças) ═══════════
+-- ═══════════ ANTI-FLING (original) ═══════════
 antiFlingConn = nil
 local function setAntiFling(state)
     if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
@@ -1435,11 +1472,16 @@ local function makeToggle(card, defaultState, callback)
     btn.ZIndex = 130
     btn.Parent = card
     Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+    
+    -- Guarda o estado dentro do botão (pra poder mudar por fora)
+    btn:SetAttribute("ToggleState", state)
+    
     btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.BackgroundColor3 = state and ACCENT or CARD
-        btn.Text = state and "ON" or "OFF"
-        if callback then callback(state) end
+        local newState = not btn:GetAttribute("ToggleState")
+        btn:SetAttribute("ToggleState", newState)
+        btn.BackgroundColor3 = newState and ACCENT or CARD
+        btn.Text = newState and "ON" or "OFF"
+        if callback then callback(newState) end
     end)
     return btn
 end
@@ -1809,7 +1851,7 @@ makeToggle(speedCard, false, function(s)
 end)
 
 flyCard = makeCard(movementPage, 132, 32)
-makeLabel(flyCard, "Fly v4 (abre GUI)", 10, 200)
+makeLabel(flyCard, "Fly (W/A/S/D + Space/Shift)", 10, 240)
 makeToggle(flyCard, false, function(s)
     Config.Fly.Enabled = s
     setFly(s)
@@ -2057,9 +2099,13 @@ end)
 antiPage = createPage("Anti")
 addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK, Fling")
 
+-- Referências globais para os botões
+antiFlingToggle = nil
+flingToggle = nil
+
 afCard = makeCard(antiPage, 56, 32)
 makeLabel(afCard, "Anti-Fling", 10, 200)
-makeToggle(afCard, true, function(s)
+antiFlingToggle = makeToggle(afCard, true, function(s)
     Config.AntiFling.Enabled = s
     setAntiFling(s)
 end)
@@ -2073,16 +2119,30 @@ end)
 
 flingCard = makeCard(antiPage, 132, 32)
 makeLabel(flingCard, "Fling (arremessa players)", 10, 200)
-makeToggle(flingCard, false, function(s)
+flingToggle = makeToggle(flingCard, false, function(s)
     Config.Fling.Enabled = s
     setFling(s)
     
     if s then
-        -- Desativa Anti-Fling (senão brigam)
+        -- Se ATIVOU o Fling → desativa Anti-Fling
         Config.AntiFling.Enabled = false
         setAntiFling(false)
-        -- Avisa o usuário
-        addNotif("Fling", "Anti-Fling desativado para o Fling funcionar.", 4)
+        if antiFlingToggle then
+            antiFlingToggle:SetAttribute("ToggleState", false)
+            antiFlingToggle.BackgroundColor3 = CARD
+            antiFlingToggle.Text = "OFF"
+        end
+        addNotif("Fling", "Anti-Fling desativado automaticamente.", 4)
+    else
+        -- Se DESATIVOU o Fling → reativa Anti-Fling
+        Config.AntiFling.Enabled = true
+        setAntiFling(true)
+        if antiFlingToggle then
+            antiFlingToggle:SetAttribute("ToggleState", true)
+            antiFlingToggle.BackgroundColor3 = ACCENT
+            antiFlingToggle.Text = "ON"
+        end
+        addNotif("Fling", "Anti-Fling reativado automaticamente.", 4)
     end
 end)
 
@@ -2204,7 +2264,7 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ═══════════ GLOW RGB DA CÁPSULA ═══════════
+-- ═══════════ GLOW RGB ═══════════
 local glowHue = 0
 RunService.RenderStepped:Connect(function(dt)
     if not capsuleGlow then return end
@@ -2219,7 +2279,7 @@ RunService.RenderStepped:Connect(function(dt)
     if glowStroke then glowStroke.Color = color end
 end)
 
--- ═══════════ DRAG DO PAINEL PELO HEADER ═══════════
+-- ═══════════ DRAG DO PAINEL ═══════════
 local mainDragging = false
 local mainDragStart = nil
 local mainStartPos = nil
@@ -2391,10 +2451,20 @@ local function resetEverything()
     if noclipConn then pcall(function() noclipConn:Disconnect() end) noclipConn = nil end
     if speedConn then pcall(function() speedConn:Disconnect() end) speedConn = nil end
     if flingConn then pcall(function() flingConn:Disconnect() end) flingConn = nil end
+    if flyConn then pcall(function() flyConn:Disconnect() end) flyConn = nil end
+    if flyInputConn then pcall(function() flyInputConn:Disconnect() end) flyInputConn = nil end
+    if flyInputEndConn then pcall(function() flyInputEndConn:Disconnect() end) flyInputEndConn = nil end
+
+    if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+    if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+    flyBodyVel, flyBodyGyro = nil, nil
 
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.WalkSpeed = 16 end
+    if hum then 
+        hum.WalkSpeed = 16 
+        hum.PlatformStand = false
+    end
 
     if infJumpConn then pcall(function() infJumpConn:Disconnect() end) infJumpConn = nil end
 
@@ -2442,6 +2512,9 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
         if noclipConn then noclipConn:Disconnect() end
         if speedConn then speedConn:Disconnect() end
         if flingConn then flingConn:Disconnect() end
+        if flyConn then flyConn:Disconnect() end
+        if flyInputConn then flyInputConn:Disconnect() end
+        if flyInputEndConn then flyInputEndConn:Disconnect() end
         if infJumpConn then infJumpConn:Disconnect() end
         if antiFlingConn then antiFlingConn:Disconnect() end
         if antiAfkConn then antiAfkConn:Disconnect() end
