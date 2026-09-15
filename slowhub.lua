@@ -478,10 +478,11 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY MOBILE (joystick + shift lock) ═══════════
+-- ═══════════ FLY MOBILE (funciona de verdade) ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
+flyGuiRef = nil
 flyUpPressed = false
 flyDownPressed = false
 
@@ -489,6 +490,7 @@ local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+    if flyGuiRef then flyGuiRef:Destroy() flyGuiRef = nil end
     flyBodyVel, flyBodyGyro = nil, nil
     flyUpPressed = false
     flyDownPressed = false
@@ -496,9 +498,8 @@ local function stopFly()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.PlatformStand = false
-        hum.AutoRotate = true
         hum.WalkSpeed = 16
+        hum.AutoRotate = true
     end
 end
 
@@ -509,22 +510,19 @@ local function startFly()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not (hrp and hum) then return end
 
-    -- NÃO usa PlatformStand (deixa o joystick funcionar)
-    hum.PlatformStand = false
-    -- Desliga rotação automática (shift lock)
-    hum.AutoRotate = false
-    -- Aumenta WalkSpeed pra voar mais rápido
+    -- NÃO mexe no PlatformStand (deixa o joystick funcionar)
     hum.WalkSpeed = Config.Fly.Speed
+    hum.AutoRotate = false
 
-    -- BodyVelocity SÓ no eixo Y (só pra anular a gravidade)
+    -- BodyVelocity: anula a gravidade (só no Y) e controla subida/descida
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
-    flyBodyVel.MaxForce = Vector3.new(0, 9e9, 0)
+    flyBodyVel.MaxForce = Vector3.new(0, 9e9, 0) -- Só Y (anula gravidade)
     flyBodyVel.P = 12500
     flyBodyVel.Velocity = Vector3.new(0, 0, 0)
     flyBodyVel.Parent = hrp
 
-    -- BodyGyro (trava rotação na câmera = shift lock)
+    -- BodyGyro: trava rotação na câmera (shift lock)
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
     flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
@@ -533,14 +531,14 @@ local function startFly()
     flyBodyGyro.CFrame = Camera.CFrame
     flyBodyGyro.Parent = hrp
 
-    -- Botões na tela pra subir/descer
-    local flyGui = Instance.new("ScreenGui")
-    flyGui.Name = "SlowHub_FlyBtns"
-    flyGui.ResetOnSpawn = false
-    flyGui.IgnoreGuiInset = true
-    flyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    flyGui.DisplayOrder = 9998
-    flyGui.Parent = parentGui
+    -- GUI com botões ▲▼
+    flyGuiRef = Instance.new("ScreenGui")
+    flyGuiRef.Name = "SlowHub_FlyBtns"
+    flyGuiRef.ResetOnSpawn = false
+    flyGuiRef.IgnoreGuiInset = true
+    flyGuiRef.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    flyGuiRef.DisplayOrder = 9998
+    flyGuiRef.Parent = parentGui
 
     local upBtn = Instance.new("TextButton")
     upBtn.Size = UDim2.new(0, 70, 0, 70)
@@ -554,7 +552,7 @@ local function startFly()
     upBtn.AutoButtonColor = false
     upBtn.Active = true
     upBtn.ZIndex = 10
-    upBtn.Parent = flyGui
+    upBtn.Parent = flyGuiRef
     Instance.new("UICorner", upBtn).CornerRadius = UDim.new(1, 0)
 
     local downBtn = Instance.new("TextButton")
@@ -569,24 +567,27 @@ local function startFly()
     downBtn.AutoButtonColor = false
     downBtn.Active = true
     downBtn.ZIndex = 10
-    downBtn.Parent = flyGui
+    downBtn.Parent = flyGuiRef
     Instance.new("UICorner", downBtn).CornerRadius = UDim.new(1, 0)
 
     upBtn.MouseButton1Down:Connect(function() flyUpPressed = true end)
     upBtn.MouseButton1Up:Connect(function() flyUpPressed = false end)
     upBtn.MouseLeave:Connect(function() flyUpPressed = false end)
+    upBtn.TouchLongPress:Connect(function() flyUpPressed = true end)
+    
     downBtn.MouseButton1Down:Connect(function() flyDownPressed = true end)
     downBtn.MouseButton1Up:Connect(function() flyDownPressed = false end)
     downBtn.MouseLeave:Connect(function() flyDownPressed = false end)
 
-    -- Guarda referência dos botões pra destruir depois
-    flyGuiRef = flyGui
-    flyUpBtnRef = upBtn
-    flyDownBtnRef = downBtn
-
+    -- Loop principal
     flyConn = RunService.RenderStepped:Connect(function()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
+
+        -- Mantém WalkSpeed alta (joystick move o personagem)
+        if hum and hum.WalkSpeed ~= Config.Fly.Speed then
+            hum.WalkSpeed = Config.Fly.Speed
+        end
 
         -- Recria se sumiu
         if not flyBodyVel or not flyBodyVel.Parent then
@@ -606,16 +607,18 @@ local function startFly()
             flyBodyGyro.Parent = hrp
         end
 
-        -- Vertical pelos botões
+        -- Controla subida/descida pelos botões
         local yVel = 0
         if flyUpPressed then
             yVel = Config.Fly.Speed
         elseif flyDownPressed then
             yVel = -Config.Fly.Speed
         end
+
+        -- Aplica velocidade vertical (gravidade anulada)
         flyBodyVel.Velocity = Vector3.new(0, yVel, 0)
 
-        -- Trava a rotação na câmera (shift lock)
+        -- Trava rotação na câmera (shift lock)
         flyBodyGyro.CFrame = Camera.CFrame
     end)
 end
@@ -623,10 +626,9 @@ end
 local function setFly(state)
     if state then
         startFly()
-        addNotif("Fly", "Joystick pra mover + botões ▲▼ pra subir/descer.", 5)
+        addNotif("Fly", "Joystick pra mover + ▲▼ pra subir/descer.", 5)
     else
         stopFly()
-        if flyGuiRef then flyGuiRef:Destroy() flyGuiRef = nil end
         addNotif("Fly", "Desativado.", 3)
     end
 end
@@ -642,77 +644,76 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (Touched + alcance 10 + força 3000) ═══════════
+-- ═══════════ FLING (método do Ken Fling) ═══════════
 flingConn = nil
-flingTouchedConn = nil
+flingTouchConns = {}
 
 local function setFling(state)
+    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    if flingTouchedConn then flingTouchedConn:Disconnect() flingTouchedConn = nil end
+    for _, c in pairs(flingTouchConns) do
+        if c then c:Disconnect() end
+    end
+    flingTouchConns = {}
+
     if not state then return end
 
     local myChar = LocalPlayer.Character
     if not myChar then return end
-    local myHrp = myChar:FindFirstChild("HumanoidRootPart")
-    if not myHrp then return end
 
-    -- Função que arremessa o alvo
-    local function flingPlayer(targetChar)
-        if not targetChar or targetChar == myChar then return end
+    -- Função que aplica o fling no alvo (BodyVelocity = método do Ken)
+    local function applyFling(targetChar)
+        if not targetChar then return end
+        if targetChar == myChar then return end
+
         local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
         local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
         if not targetHrp or not targetHum then return end
         if targetHum.Health <= 0 then return end
 
-        local randomDir = Vector3.new(
-            math.random(-100, 100) / 100,
-            1,
-            math.random(-100, 100) / 100
-        ).Unit
+        -- Cria BodyVelocity com força INFINITA (igual Ken)
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.Velocity = Vector3.new(
+            math.random(-5000, 5000),
+            math.random(5000, 10000),
+            math.random(-5000, 5000)
+        )
+        bv.Parent = targetHrp
 
-        -- Força MUITO alta + teleporte
-        targetHrp.AssemblyLinearVelocity = randomDir * 3000
-        targetHrp.CFrame = targetHrp.CFrame + Vector3.new(0, 30, 0)
-
-        pcall(function()
-            targetHum.PlatformStand = true
+        -- Destrói depois de 0.1s (pra não travar o player pra sempre)
+        task.delay(0.1, function()
+            if bv and bv.Parent then
+                bv:Destroy()
+            end
         end)
     end
 
-    -- Detecta quando OUTRO player TOCA no seu HRP
-    flingTouchedConn = myHrp.Touched:Connect(function(hit)
-        if not Config.Fling.Enabled then return end
-        local hitChar = hit:FindFirstAncestorOfClass("Model")
-        if not hitChar then return end
-        local hitPlr = Players:GetPlayerFromCharacter(hitChar)
-        if hitPlr and hitPlr ~= LocalPlayer then
-            flingPlayer(hitChar)
-        end
-    end)
-
-    -- Loop que arremessa QUALQUER player num raio de 10 studs
-    flingConn = RunService.Heartbeat:Connect(function()
-        if not Config.Fling.Enabled then return end
-        local char = LocalPlayer.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                local targetChar = plr.Character
-                if targetChar then
-                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-                    if targetHrp then
-                        local dist = (hrp.Position - targetHrp.Position).Magnitude
-                        -- Alcance aumentado pra 10 studs
-                        if dist < 10 then
-                            flingPlayer(targetChar)
-                        end
+    -- Conecta Touched em TODAS as partes do MEU corpo (não só HRP)
+    local function connectTouched(character)
+        if not character then return end
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                local conn = part.Touched:Connect(function(hit)
+                    if not Config.Fling.Enabled then return end
+                    local hitChar = hit:FindFirstAncestorOfClass("Model")
+                    if not hitChar then return end
+                    local hitPlr = Players:GetPlayerFromCharacter(hitChar)
+                    if hitPlr and hitPlr ~= LocalPlayer then
+                        applyFling(hitChar)
                     end
-                end
+                end)
+                flingTouchConns[#flingTouchConns + 1] = conn
             end
         end
+    end
+
+    connectTouched(myChar)
+
+    -- Reconecta quando eu respawnar
+    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
+        task.wait(1)
+        connectTouched(newChar)
     end)
 end
 
