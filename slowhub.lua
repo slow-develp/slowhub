@@ -501,51 +501,82 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY v4 (integrado, sem abrir GUI) ═══════════
-flyScriptLoaded = false
+-- ═══════════ FLY v4 (recarrega ao ativar) ═══════════
 flyActive = false
+
+-- Função que encontra a GUI do Fly v4 em qualquer lugar
+local function findFlyV4Gui()
+    local found = nil
+    pcall(function()
+        for _, g in pairs(game:GetService("CoreGui"):GetChildren()) do
+            if g.Name == "FlyV4" then found = g end
+        end
+        for _, g in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if g.Name == "FlyV4" then found = g end
+        end
+    end)
+    return found
+end
+
+-- Função que aperta a tecla F
+local function pressF()
+    pcall(function()
+        local vim = game:GetService("VirtualInputManager")
+        vim:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.05)
+        vim:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+    end)
+end
 
 local function setFly(state)
     if state then
-        if not flyScriptLoaded then
-            local success = pcall(function()
-                loadstring(game:HttpGet(FLY_URL))()
-            end)
-            if success then
-                flyScriptLoaded = true
-                flyActive = true
-                task.wait(1.5)
-                -- Fecha a GUI do Fly v4 automaticamente
-                pcall(function()
-                    for _, g in pairs(game:GetService("CoreGui"):GetChildren()) do
-                        if g.Name == "FlyV4" then
-                            g.Enabled = false
-                        end
-                    end
-                    for _, g in pairs(game:GetService("Players").LocalPlayer.PlayerGui:GetChildren()) do
-                        if g.Name == "FlyV4" then
-                            g.Enabled = false
-                        end
-                    end
-                end)
-                -- Aperta F pra ativar o Fly v4
-                task.wait(0.2)
-                pcall(function()
-                    local vim = game:GetService("VirtualInputManager")
-                    vim:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-                    task.wait(0.05)
-                    vim:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-                end)
-                addNotif("Fly", "Fly ativado. W/A/S/D para voar.", 4)
-            else
-                addNotif("Fly", "Erro ao carregar o Fly v4.", 5)
-            end
-        else
+        -- Recarrega o Fly v4 sempre que ativar
+        local success = pcall(function()
+            loadstring(game:HttpGet(FLY_URL))()
+        end)
+        
+        if success then
             flyActive = true
-            addNotif("Fly", "Fly ativado.", 3)
+            task.wait(1.5)
+            
+            -- Destrói a GUI do Fly v4 (não precisa dela)
+            local flyGui = findFlyV4Gui()
+            if flyGui then
+                flyGui:Destroy()
+            end
+            
+            -- Aperta F pra ativar o voo
+            task.wait(0.3)
+            pressF()
+            
+            addNotif("Fly", "Fly ativado. W/A/S/D para voar.", 4)
+        else
+            addNotif("Fly", "Erro ao carregar o Fly v4.", 5)
         end
     else
+        -- Desativa: aperta F pra desligar o voo + limpa resíduos
         flyActive = false
+        
+        -- Aperta F (desliga o voo)
+        pressF()
+        
+        -- Destrói a GUI caso ainda exista
+        task.wait(0.1)
+        local flyGui = findFlyV4Gui()
+        if flyGui then
+            flyGui:Destroy()
+        end
+        
+        -- Reseta o personagem (caso esteja voando)
+        pcall(function()
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.PlatformStand = false
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        end)
+        
         addNotif("Fly", "Fly desativado.", 3)
     end
 end
@@ -561,68 +592,48 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (arremessa o OUTRO player) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player em direção aleatória) ═══════════
 flingConn = nil
-flingTouchedConns = {}
 
 local function setFling(state)
-    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    for _, c in pairs(flingTouchedConns) do
-        if c then c:Disconnect() end
-    end
-    flingTouchedConns = {}
-
     if not state then return end
 
-    local function attachToCharacter(char)
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
+    flingConn = RunService.Heartbeat:Connect(function()
+        local myChar = LocalPlayer.Character
+        if not myChar then return end
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHrp then return end
 
-        -- Detecta quando OUTRO player toca no MEU personagem
-        local conn = hrp.Touched:Connect(function(hit)
-            local hitChar = hit:FindFirstAncestorOfClass("Model")
-            if not hitChar then return end
-            local hitPlr = Players:GetPlayerFromCharacter(hitChar)
-            if not hitPlr or hitPlr == LocalPlayer then return end
-
-            local targetHrp = hitChar:FindFirstChild("HumanoidRootPart")
-            local targetHum = hitChar:FindFirstChildOfClass("Humanoid")
-            if not targetHrp or not targetHum then return end
-            if targetHum.Health <= 0 then return end
-
-            -- ARREMESSA O OUTRO PLAYER (não você)
-            local myHrp = char:FindFirstChild("HumanoidRootPart")
-            if not myHrp then return end
-
-            local dir = targetHrp.Position - myHrp.Position
-            if dir.Magnitude < 0.1 then
-                dir = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local targetChar = plr.Character
+                if targetChar then
+                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+                    local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+                    if targetHrp and targetHum and targetHum.Health > 0 then
+                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
+                        
+                        -- Só ativa se o player estiver ENCOSTANDO em você (dist < 4)
+                        if dist < 4 then
+                            -- Direção ALEATÓRIA (pra todos os lados)
+                            local randomDir = Vector3.new(
+                                math.random(-100, 100) / 100,
+                                math.random(20, 100) / 100,
+                                math.random(-100, 100) / 100
+                            ).Unit
+                            
+                            -- Arremessa o OUTRO player (não você!)
+                            targetHrp.AssemblyLinearVelocity = randomDir * 1500
+                            
+                            pcall(function()
+                                targetHum.PlatformStand = true
+                            end)
+                        end
+                    end
+                end
             end
-            dir = dir.Unit
-
-            -- Força alta no HRP DO OUTRO
-            targetHrp.AssemblyLinearVelocity = Vector3.new(
-                dir.X * 1500,
-                2000,
-                dir.Z * 1500
-            )
-
-            pcall(function()
-                targetHum.PlatformStand = true
-            end)
-        end)
-        flingTouchedConns[#flingTouchedConns + 1] = conn
-    end
-
-    if LocalPlayer.Character then
-        attachToCharacter(LocalPlayer.Character)
-    end
-
-    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
-        task.wait(1)
-        attachToCharacter(newChar)
+        end
     end)
 end
 
