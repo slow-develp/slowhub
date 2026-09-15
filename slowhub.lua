@@ -478,7 +478,7 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY RÍGIDO (analógico + câmera) ═══════════
+-- ═══════════ FLY MOBILE (analógico + câmera) ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
@@ -511,14 +511,14 @@ local function startFly()
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
     flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyVel.P = 50000
+    flyBodyVel.P = 12500
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
     flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyGyro.P = 300000
+    flyBodyGyro.P = 30000
     flyBodyGyro.D = 500
     flyBodyGyro.CFrame = Camera.CFrame
     flyBodyGyro.Parent = hrp
@@ -535,7 +535,7 @@ local function startFly()
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
             flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyVel.P = 50000
+            flyBodyVel.P = 12500
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
@@ -543,7 +543,7 @@ local function startFly()
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
             flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyGyro.P = 300000
+            flyBodyGyro.P = 30000
             flyBodyGyro.D = 500
             flyBodyGyro.Parent = hrp
         end
@@ -567,12 +567,12 @@ end
 local function setFly(state)
     if state then
         startFly()
-        addNotif("Fly", "Analógico move. Câmera direciona.", 4)
+        addNotif("Fly", "Ativado.", 3)
     else
         stopFly()
         addNotif("Fly", "Desativado.", 3)
     end
-end
+end       
         
 infJumpConn = nil
 local function setInfJump(state)
@@ -585,7 +585,7 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (Touched em todas as partes) ═══════════
+-- ═══════════ FLING (Ken - Touched + BodyVelocity infinita) ═══════════
 flingConn = nil
 flingTouchConns = {}
 
@@ -598,41 +598,39 @@ local function setFling(state)
 
     if not state then return end
 
-    local function applyFling(targetChar)
+    local function flingTarget(targetChar)
         if not targetChar then return end
         if targetChar == LocalPlayer.Character then return end
-        local tHrp = targetChar:FindFirstChild("HumanoidRootPart")
-        local tHum = targetChar:FindFirstChildOfClass("Humanoid")
-        if not tHrp or not tHum then return end
-        if tHum.Health <= 0 then return end
 
-        -- Direção aleatória pra longe
-        local dir = Vector3.new(
-            math.random(-100, 100) / 100,
-            math.random(70, 100) / 100,
-            math.random(-100, 100) / 100
-        ).Unit
+        local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+        local hum = targetChar:FindFirstChildOfClass("Humanoid")
+        if not hrp or not hum then return end
+        if hum.Health <= 0 then return end
 
-        -- BodyVelocity no HRP DO OUTRO (força infinita)
+        -- BodyVelocity com força infinita (não pode ser revertida fácil)
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = dir * 3500
-        bv.Parent = tHrp
-        task.delay(0.2, function()
-            if bv and bv.Parent then bv:Destroy() end
+        bv.Velocity = Vector3.new(
+            math.random(-5000, 5000),
+            math.random(3000, 6000),
+            math.random(-5000, 5000)
+        )
+        bv.Parent = hrp
+        task.delay(0.15, function()
+            if bv then bv:Destroy() end
         end)
 
-        -- Teleporte pra longe (garante o void)
-        tHrp.CFrame = tHrp.CFrame + (dir * 40) + Vector3.new(0, 80, 0)
+        -- Garante que sai do lugar
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, 100, 0)
 
         pcall(function()
-            tHum.PlatformStand = true
+            hum.PlatformStand = true
         end)
     end
 
-    local function connectAll(character)
+    local function connectCharacter(character)
         if not character then return end
-        for _, part in ipairs(character:GetDescendants()) do
+        for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
                 local conn = part.Touched:Connect(function(hit)
                     if not Config.Fling.Enabled then return end
@@ -640,7 +638,7 @@ local function setFling(state)
                     if not hitChar then return end
                     local hitPlr = Players:GetPlayerFromCharacter(hitChar)
                     if hitPlr and hitPlr ~= LocalPlayer then
-                        applyFling(hitChar)
+                        flingTarget(hitChar)
                     end
                 end)
                 flingTouchConns[#flingTouchConns + 1] = conn
@@ -648,13 +646,13 @@ local function setFling(state)
         end
     end
 
-    connectAll(LocalPlayer.Character)
+    connectCharacter(LocalPlayer.Character)
     flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
         task.wait(1)
-        connectAll(newChar)
+        connectCharacter(newChar)
     end)
 end
-    
+
 -- ANTI-FLING
 antiFlingConn = nil
 local function setAntiFling(state)
