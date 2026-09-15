@@ -536,22 +536,14 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (arremessa o OUTRO player) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
 -- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
 flingConn = nil
-flingTargets = {}
 
 local function setFling(state)
-    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    for _, c in pairs(flingTargets) do
-        if c then c:Disconnect() end
-    end
-    flingTargets = {}
-
     if not state then return end
 
-    -- Loop principal: aplica fling continuamente em quem estiver perto
     flingConn = RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if not char then return end
@@ -566,21 +558,31 @@ local function setFling(state)
                     local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
                     if targetHrp and targetHum and targetHum.Health > 0 then
                         local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        -- Se o player estiver perto (encostando), arremessa continuamente
-                        if dist < 8 then
-                            -- Aplica velocidade forte pra cima e pra longe
-                            targetHrp.AssemblyLinearVelocity = Vector3.new(
-                                math.random(-1000, 1000),
-                                1500,
-                                math.random(-1000, 1000)
-                            )
-                            -- Empurra o CFrame pra cima também (força extra)
-                            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 15, 0)
+                        if dist < 10 then
+                            -- Método 1: Zera a velocidade (impede ele de se segurar)
+                            targetHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                             
-                            -- Desativa o Humanoid pra ele não conseguir se segurar
+                            -- Método 2: Move o CFrame DIRETAMENTE pra longe e pra cima
+                            -- (isso não tem como o Roblox reverter)
+                            local direction = (targetHrp.Position - myHrp.Position)
+                            if direction.Magnitude < 0.1 then
+                                direction = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+                            end
+                            direction = direction.Unit
+                            
+                            local newPos = targetHrp.Position + Vector3.new(
+                                direction.X * 500,
+                                1000,
+                                direction.Z * 500
+                            )
+                            
+                            targetHrp.CFrame = CFrame.new(newPos)
+                            
+                            -- Método 3: Força o Humanoid a cair (perde controle)
                             pcall(function()
                                 targetHum.PlatformStand = true
                                 targetHum:ChangeState(Enum.HumanoidStateType.Physics)
+                                targetHum.Health = 0 -- mata ele (opcional, mas garante que não volta)
                             end)
                         end
                     end
