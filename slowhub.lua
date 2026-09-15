@@ -537,6 +537,7 @@ local function setInfJump(state)
 end
 
 -- ═══════════ FLING (arremessa o OUTRO player) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player pro void) ═══════════
 flingConn = nil
 flingTargets = {}
 
@@ -550,44 +551,42 @@ local function setFling(state)
 
     if not state then return end
 
-    -- Conecta no "Touched" do HRP do jogador (quem encostar em MIM)
-    local function attachToCharacter(char)
+    -- Loop principal: aplica fling continuamente em quem estiver perto
+    flingConn = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
         if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
+        local myHrp = char:FindFirstChild("HumanoidRootPart")
+        if not myHrp then return end
 
-        local conn = hrp.Touched:Connect(function(hit)
-            -- Descobre qual player foi tocado
-            local hitChar = hit:FindFirstAncestorOfClass("Model")
-            if not hitChar then return end
-            local hitPlr = Players:GetPlayerFromCharacter(hitChar)
-            if not hitPlr or hitPlr == LocalPlayer then return end
-
-            local targetHrp = hitChar:FindFirstChild("HumanoidRootPart")
-            local targetHum = hitChar:FindFirstChildOfClass("Humanoid")
-            if not targetHrp or not targetHum then return end
-            if targetHum.Health <= 0 then return end
-
-            -- Arremessa o OUTRO player (não você!)
-            targetHrp.AssemblyLinearVelocity = Vector3.new(
-                math.random(-500, 500),
-                800,
-                math.random(-500, 500)
-            )
-            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 25, 0)
-        end)
-        flingTargets[#flingTargets + 1] = conn
-    end
-
-    -- Conecta no meu personagem atual
-    if LocalPlayer.Character then
-        attachToCharacter(LocalPlayer.Character)
-    end
-
-    -- Reconecta se eu morrer/respawnar
-    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
-        task.wait(1)
-        attachToCharacter(newChar)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local targetChar = plr.Character
+                if targetChar then
+                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+                    local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+                    if targetHrp and targetHum and targetHum.Health > 0 then
+                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
+                        -- Se o player estiver perto (encostando), arremessa continuamente
+                        if dist < 8 then
+                            -- Aplica velocidade forte pra cima e pra longe
+                            targetHrp.AssemblyLinearVelocity = Vector3.new(
+                                math.random(-1000, 1000),
+                                1500,
+                                math.random(-1000, 1000)
+                            )
+                            -- Empurra o CFrame pra cima também (força extra)
+                            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 15, 0)
+                            
+                            -- Desativa o Humanoid pra ele não conseguir se segurar
+                            pcall(function()
+                                targetHum.PlatformStand = true
+                                targetHum:ChangeState(Enum.HumanoidStateType.Physics)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
     end)
 end
 
