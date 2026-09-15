@@ -536,38 +536,58 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (arremessa quem encostar) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player) ═══════════
 flingConn = nil
+flingTargets = {}
 
 local function setFling(state)
+    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
+    for _, c in pairs(flingTargets) do
+        if c then c:Disconnect() end
+    end
+    flingTargets = {}
+
     if not state then return end
 
-    flingConn = RunService.Heartbeat:Connect(function()
-        local char = LocalPlayer.Character
+    -- Conecta no "Touched" do HRP do jogador (quem encostar em MIM)
+    local function attachToCharacter(char)
         if not char then return end
-        local myHrp = char:FindFirstChild("HumanoidRootPart")
-        if not myHrp then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
 
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                local targetChar = plr.Character
-                if targetChar then
-                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-                    local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
-                    if targetHrp and targetHum and targetHum.Health > 0 then
-                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        if dist < 5 then
-                            targetHrp.AssemblyLinearVelocity = Vector3.new(
-                                math.random(-800, 800),
-                                1200,
-                                math.random(-800, 800)
-                            )
-                        end
-                    end
-                end
-            end
-        end
+        local conn = hrp.Touched:Connect(function(hit)
+            -- Descobre qual player foi tocado
+            local hitChar = hit:FindFirstAncestorOfClass("Model")
+            if not hitChar then return end
+            local hitPlr = Players:GetPlayerFromCharacter(hitChar)
+            if not hitPlr or hitPlr == LocalPlayer then return end
+
+            local targetHrp = hitChar:FindFirstChild("HumanoidRootPart")
+            local targetHum = hitChar:FindFirstChildOfClass("Humanoid")
+            if not targetHrp or not targetHum then return end
+            if targetHum.Health <= 0 then return end
+
+            -- Arremessa o OUTRO player (não você!)
+            targetHrp.AssemblyLinearVelocity = Vector3.new(
+                math.random(-500, 500),
+                800,
+                math.random(-500, 500)
+            )
+            targetHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 25, 0)
+        end)
+        flingTargets[#flingTargets + 1] = conn
+    end
+
+    -- Conecta no meu personagem atual
+    if LocalPlayer.Character then
+        attachToCharacter(LocalPlayer.Character)
+    end
+
+    -- Reconecta se eu morrer/respawnar
+    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
+        task.wait(1)
+        attachToCharacter(newChar)
     end)
 end
 
