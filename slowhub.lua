@@ -582,7 +582,6 @@ local function setFling(state)
                             pcall(function()
                                 targetHum.PlatformStand = true
                                 targetHum:ChangeState(Enum.HumanoidStateType.Physics)
-                                targetHum.Health = 0 -- mata ele (opcional, mas garante que não volta)
                             end)
                         end
                     end
