@@ -822,7 +822,7 @@ local function openDiscord()
     end)
 end
 
--- 🔥 Ativa Anti-Fling por padrão (vem habilitado)
+-- 🔥 Ativa Anti-Fling por padrão
 task.spawn(function()
     task.wait(1)
     if Config.AntiFling.Enabled then
@@ -852,8 +852,8 @@ MAXIMIZED_SIZE = UDim2.new(0, maxW, 0, maxH)
 -- ═══════════ CÁPSULA IDÊNTICA AO PEPI ═══════════
 capsule = Instance.new("Frame")
 capsule.Name = "Capsule"
-capsule.Size = UDim2.new(0, 200, 0, 44)
-capsule.Position = UDim2.new(0.5, -100, 0, 12)
+capsule.Size = UDim2.new(0, 220, 0, 44)
+capsule.Position = UDim2.new(0.5, -110, 0, 12)
 capsule.BackgroundColor3 = Color3.fromRGB(12, 10, 18)
 capsule.BackgroundTransparency = 0
 capsule.BorderSizePixel = 0
@@ -876,10 +876,10 @@ capsuleGradient.Color = ColorSequence.new({
 })
 capsuleGradient.Rotation = 0
 
--- Zona da seta como TextButton (captura input garantido)
+-- Zona da seta (esquerda) — 44px
 dragZone = Instance.new("TextButton")
 dragZone.Name = "DragZone"
-dragZone.Size = UDim2.new(0, 40, 1, 0)
+dragZone.Size = UDim2.new(0, 44, 1, 0)
 dragZone.Position = UDim2.new(0, 0, 0, 0)
 dragZone.BackgroundTransparency = 1
 dragZone.Text = ""
@@ -889,19 +889,31 @@ dragZone.ZIndex = 8
 dragZone.Parent = capsule
 Instance.new("UICorner", dragZone).CornerRadius = UDim.new(1, 0)
 
+-- Ícone da seta (24×24)
 dragIcon = Instance.new("ImageLabel")
 dragIcon.Name = "DragIcon"
-dragIcon.Size = UDim2.new(0, 20, 0, 20)
-dragIcon.Position = UDim2.new(0.5, -10, 0.5, -10)
+dragIcon.Size = UDim2.new(0, 24, 0, 24)
+dragIcon.Position = UDim2.new(0.5, -12, 0.5, -12)
 dragIcon.BackgroundTransparency = 1
 dragIcon.Image = "rbxassetid://79111374854903"
-dragIcon.ImageColor3 = Color3.fromRGB(200, 200, 205)
+dragIcon.ImageColor3 = Color3.fromRGB(210, 210, 220)
 dragIcon.ZIndex = 9
 dragIcon.Parent = dragZone
 
+-- 🔥 Linha divisória visível
+local divider = Instance.new("Frame")
+divider.Name = "Divider"
+divider.Size = UDim2.new(0, 1, 0, 24)
+divider.Position = UDim2.new(0, 44, 0.5, -12)
+divider.BackgroundColor3 = Color3.fromRGB(70, 65, 90)
+divider.BackgroundTransparency = 0.2
+divider.BorderSizePixel = 0
+divider.ZIndex = 6
+divider.Parent = capsule
+
 capsuleText = Instance.new("TextLabel")
-capsuleText.Size = UDim2.new(1, -50, 1, 0)
-capsuleText.Position = UDim2.new(0, 40, 0, 0)
+capsuleText.Size = UDim2.new(1, -54, 1, 0)
+capsuleText.Position = UDim2.new(0, 44, 0, 0)
 capsuleText.BackgroundTransparency = 1
 capsuleText.Text = "Slow Hub"
 capsuleText.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2318,34 +2330,42 @@ confirmCloseBtn.MouseButton1Click:Connect(function()
     addNotif("Slow Hub", "Todas as funções foram desativadas.")
 end)
 
--- ═══════════ DRAG CÁPSULA (via dragZone TextButton) ═══════════
-local capsuleDragActive = false
+-- ═══════════ DRAG CÁPSULA (só move se ARRASTAR) ═══════════
+local capsuleDragHolding = false
 local capsuleDragStart = nil
 local capsuleStartPos = nil
+local capsuleMovedDistance = 0
 
 dragZone.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        capsuleDragActive = true
+        capsuleDragHolding = true
         capsuleDragStart = input.Position
         capsuleStartPos = capsule.Position
+        capsuleMovedDistance = 0
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                capsuleDragActive = false
+                capsuleDragHolding = false
+                capsuleDragStart = nil
             end
         end)
     end
 end)
 
 RunService.RenderStepped:Connect(function()
-    if capsuleDragActive and capsuleDragStart then
+    if capsuleDragHolding and capsuleDragStart then
         local mousePos = UIS:GetMouseLocation()
         local delta = Vector2.new(mousePos.X - capsuleDragStart.X, mousePos.Y - capsuleDragStart.Y)
-        capsule.Position = UDim2.new(
-            capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
-            capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
-        )
+        capsuleMovedDistance = math.sqrt(delta.X * delta.X + delta.Y * delta.Y)
+
+        -- 🔥 Só move se arrastar mais de 4px (não pula ao clicar)
+        if capsuleMovedDistance > 4 then
+            capsule.Position = UDim2.new(
+                capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + delta.X,
+                capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + delta.Y
+            )
+        end
     end
 end)
 
@@ -2356,7 +2376,8 @@ capsule.InputEnded:Connect(function(input)
     if not capsule.Visible then return end
 
     task.wait(0.05)
-    if capsuleDragActive then return end
+    if capsuleDragHolding then return end
+    if capsuleMovedDistance > 4 then return end
 
     local mousePos = UIS:GetMouseLocation()
     local abs = dragZone.AbsolutePosition
