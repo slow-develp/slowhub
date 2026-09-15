@@ -478,7 +478,7 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY MOBILE (analógico + câmera) ═══════════
+-- ═══════════ FLY MOBILE ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
@@ -491,9 +491,8 @@ local function stopFly()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.PlatformStand = false
+        hum.WalkSpeed = 16
         hum.AutoRotate = true
-        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
     end
 end
 
@@ -504,21 +503,20 @@ local function startFly()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not (hrp and hum) then return end
 
-    hum.PlatformStand = true
+    hum.WalkSpeed = 0
     hum.AutoRotate = false
-    pcall(function() hum:ChangeState(Enum.HumanoidStateType.Physics) end)
 
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
     flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyVel.P = 12500
+    flyBodyVel.P = 1e5
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
     flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyGyro.P = 30000
+    flyBodyGyro.P = 1e5
     flyBodyGyro.D = 500
     flyBodyGyro.CFrame = Camera.CFrame
     flyBodyGyro.Parent = hrp
@@ -527,15 +525,18 @@ local function startFly()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
 
-        if hum and not hum.PlatformStand then
-            hum.PlatformStand = true
+        if hum and hum.WalkSpeed ~= 0 then
+            hum.WalkSpeed = 0
+        end
+        if hum and hum.AutoRotate then
             hum.AutoRotate = false
         end
+
         if not flyBodyVel or not flyBodyVel.Parent then
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
             flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyVel.P = 12500
+            flyBodyVel.P = 1e5
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
@@ -543,7 +544,7 @@ local function startFly()
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
             flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyGyro.P = 30000
+            flyBodyGyro.P = 1e5
             flyBodyGyro.D = 500
             flyBodyGyro.Parent = hrp
         end
@@ -572,7 +573,7 @@ local function setFly(state)
         stopFly()
         addNotif("Fly", "Desativado.", 3)
     end
-end       
+end
         
 infJumpConn = nil
 local function setInfJump(state)
@@ -585,7 +586,7 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (Ken - Touched + BodyVelocity infinita) ═══════════
+-- ═══════════ FLING ═══════════
 flingConn = nil
 flingTouchConns = {}
 
@@ -601,36 +602,35 @@ local function setFling(state)
     local function flingTarget(targetChar)
         if not targetChar then return end
         if targetChar == LocalPlayer.Character then return end
+        local tHrp = targetChar:FindFirstChild("HumanoidRootPart")
+        local tHum = targetChar:FindFirstChildOfClass("Humanoid")
+        if not tHrp or not tHum then return end
+        if tHum.Health <= 0 then return end
 
-        local hrp = targetChar:FindFirstChild("HumanoidRootPart")
-        local hum = targetChar:FindFirstChildOfClass("Humanoid")
-        if not hrp or not hum then return end
-        if hum.Health <= 0 then return end
+        local dir = Vector3.new(
+            math.random(-100, 100) / 100,
+            math.random(80, 100) / 100,
+            math.random(-100, 100) / 100
+        ).Unit
 
-        -- BodyVelocity com força infinita (não pode ser revertida fácil)
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = Vector3.new(
-            math.random(-5000, 5000),
-            math.random(3000, 6000),
-            math.random(-5000, 5000)
-        )
-        bv.Parent = hrp
-        task.delay(0.15, function()
+        bv.Velocity = dir * 4000
+        bv.Parent = tHrp
+        task.delay(0.2, function()
             if bv then bv:Destroy() end
         end)
 
-        -- Garante que sai do lugar
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, 100, 0)
+        tHrp.CFrame = tHrp.CFrame + (dir * 50) + Vector3.new(0, 100, 0)
 
         pcall(function()
-            hum.PlatformStand = true
+            tHum.PlatformStand = true
         end)
     end
 
     local function connectCharacter(character)
         if not character then return end
-        for _, part in pairs(character:GetDescendants()) do
+        for _, part in ipairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
                 local conn = part.Touched:Connect(function(hit)
                     if not Config.Fling.Enabled then return end
@@ -1819,7 +1819,7 @@ makeToggle(speedCard, false, function(s)
 end)
 
 flyCard = makeCard(movementPage, 132, 32)
-makeLabel(flyCard, "Fly (W/A/S/D + Space/Shift)", 10, 240)
+makeLabel(flyCard, "Fly", 10, 200)
 makeToggle(flyCard, false, function(s)
     Config.Fly.Enabled = s
     setFly(s)
