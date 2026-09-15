@@ -478,28 +478,23 @@ local function setSpeed(state)
     end
 end
 
--- ═══════════ FLY MOBILE (funciona de verdade) ═══════════
+-- ═══════════ FLY RÍGIDO (câmera controla direção) ═══════════
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
-flyGuiRef = nil
-flyUpPressed = false
-flyDownPressed = false
 
 local function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
-    if flyGuiRef then flyGuiRef:Destroy() flyGuiRef = nil end
     flyBodyVel, flyBodyGyro = nil, nil
-    flyUpPressed = false
-    flyDownPressed = false
     
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.WalkSpeed = 16
+        hum.PlatformStand = false
         hum.AutoRotate = true
+        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
     end
 end
 
@@ -510,123 +505,77 @@ local function startFly()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not (hrp and hum) then return end
 
-    -- NÃO mexe no PlatformStand (deixa o joystick funcionar)
-    hum.WalkSpeed = Config.Fly.Speed
+    -- Rigidez total
+    hum.PlatformStand = true
     hum.AutoRotate = false
 
-    -- BodyVelocity: anula a gravidade (só no Y) e controla subida/descida
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
-    flyBodyVel.MaxForce = Vector3.new(0, 9e9, 0) -- Só Y (anula gravidade)
-    flyBodyVel.P = 12500
-    flyBodyVel.Velocity = Vector3.new(0, 0, 0)
+    flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    flyBodyVel.P = 200000
+    flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
-    -- BodyGyro: trava rotação na câmera (shift lock)
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
     flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyGyro.P = 100000
-    flyBodyGyro.D = 1000
+    flyBodyGyro.P = 500000
+    flyBodyGyro.D = 2000
     flyBodyGyro.CFrame = Camera.CFrame
     flyBodyGyro.Parent = hrp
 
-    -- GUI com botões ▲▼
-    flyGuiRef = Instance.new("ScreenGui")
-    flyGuiRef.Name = "SlowHub_FlyBtns"
-    flyGuiRef.ResetOnSpawn = false
-    flyGuiRef.IgnoreGuiInset = true
-    flyGuiRef.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    flyGuiRef.DisplayOrder = 9998
-    flyGuiRef.Parent = parentGui
-
-    local upBtn = Instance.new("TextButton")
-    upBtn.Size = UDim2.new(0, 70, 0, 70)
-    upBtn.Position = UDim2.new(1, -90, 0.5, -140)
-    upBtn.BackgroundColor3 = Color3.fromRGB(70, 200, 120)
-    upBtn.BackgroundTransparency = 0.2
-    upBtn.Text = "▲"
-    upBtn.TextColor3 = Color3.new(1, 1, 1)
-    upBtn.TextSize = 32
-    upBtn.Font = Enum.Font.GothamBold
-    upBtn.AutoButtonColor = false
-    upBtn.Active = true
-    upBtn.ZIndex = 10
-    upBtn.Parent = flyGuiRef
-    Instance.new("UICorner", upBtn).CornerRadius = UDim.new(1, 0)
-
-    local downBtn = Instance.new("TextButton")
-    downBtn.Size = UDim2.new(0, 70, 0, 70)
-    downBtn.Position = UDim2.new(1, -90, 0.5, 70)
-    downBtn.BackgroundColor3 = Color3.fromRGB(230, 80, 90)
-    downBtn.BackgroundTransparency = 0.2
-    downBtn.Text = "▼"
-    downBtn.TextColor3 = Color3.new(1, 1, 1)
-    downBtn.TextSize = 32
-    downBtn.Font = Enum.Font.GothamBold
-    downBtn.AutoButtonColor = false
-    downBtn.Active = true
-    downBtn.ZIndex = 10
-    downBtn.Parent = flyGuiRef
-    Instance.new("UICorner", downBtn).CornerRadius = UDim.new(1, 0)
-
-    upBtn.MouseButton1Down:Connect(function() flyUpPressed = true end)
-    upBtn.MouseButton1Up:Connect(function() flyUpPressed = false end)
-    upBtn.MouseLeave:Connect(function() flyUpPressed = false end)
-    upBtn.TouchLongPress:Connect(function() flyUpPressed = true end)
-    
-    downBtn.MouseButton1Down:Connect(function() flyDownPressed = true end)
-    downBtn.MouseButton1Up:Connect(function() flyDownPressed = false end)
-    downBtn.MouseLeave:Connect(function() flyDownPressed = false end)
-
-    -- Loop principal
     flyConn = RunService.RenderStepped:Connect(function()
         if not Config.Fly.Enabled then return end
         if not (hrp and hrp.Parent) then return end
 
-        -- Mantém WalkSpeed alta (joystick move o personagem)
-        if hum and hum.WalkSpeed ~= Config.Fly.Speed then
-            hum.WalkSpeed = Config.Fly.Speed
+        if hum and not hum.PlatformStand then
+            hum.PlatformStand = true
+            hum.AutoRotate = false
         end
 
-        -- Recria se sumiu
         if not flyBodyVel or not flyBodyVel.Parent then
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
-            flyBodyVel.MaxForce = Vector3.new(0, 9e9, 0)
-            flyBodyVel.P = 12500
-            flyBodyVel.Velocity = Vector3.new(0, 0, 0)
+            flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyBodyVel.P = 200000
+            flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
         if not flyBodyGyro or not flyBodyGyro.Parent then
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
             flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyGyro.P = 100000
-            flyBodyGyro.D = 1000
+            flyBodyGyro.P = 500000
+            flyBodyGyro.D = 2000
             flyBodyGyro.Parent = hrp
         end
 
-        -- Controla subida/descida pelos botões
-        local yVel = 0
-        if flyUpPressed then
-            yVel = Config.Fly.Speed
-        elseif flyDownPressed then
-            yVel = -Config.Fly.Speed
+        -- Joystick move na direção da CÂMERA
+        local moveVector = UIS:GetMoveVector()
+        local cam = Camera.CFrame
+        local move = Vector3.zero
+
+        if moveVector.Magnitude > 0.1 then
+            -- forward = onde a câmera olha (sobe se olhar pra cima)
+            -- right = lado da câmera
+            local forward = cam.LookVector
+            local right = cam.RightVector
+            move = (forward * -moveVector.Z) + (right * moveVector.X)
+            if move.Magnitude > 0 then
+                move = move.Unit * Config.Fly.Speed
+            end
         end
 
-        -- Aplica velocidade vertical (gravidade anulada)
-        flyBodyVel.Velocity = Vector3.new(0, yVel, 0)
-
+        flyBodyVel.Velocity = move
         -- Trava rotação na câmera (shift lock)
-        flyBodyGyro.CFrame = Camera.CFrame
+        flyBodyGyro.CFrame = cam
     end)
 end
 
 local function setFly(state)
     if state then
         startFly()
-        addNotif("Fly", "Joystick pra mover + ▲▼ pra subir/descer.", 5)
+        addNotif("Fly", "Joystick move. Olhe pra cima/baixo/lados.", 5)
     else
         stopFly()
         addNotif("Fly", "Desativado.", 3)
@@ -644,76 +593,66 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (método do Ken Fling) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player) ═══════════
 flingConn = nil
-flingTouchConns = {}
 
 local function setFling(state)
-    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    for _, c in pairs(flingTouchConns) do
-        if c then c:Disconnect() end
-    end
-    flingTouchConns = {}
-
     if not state then return end
 
-    local myChar = LocalPlayer.Character
-    if not myChar then return end
+    flingConn = RunService.Heartbeat:Connect(function()
+        if not Config.Fling.Enabled then return end
 
-    -- Função que aplica o fling no alvo (BodyVelocity = método do Ken)
-    local function applyFling(targetChar)
-        if not targetChar then return end
-        if targetChar == myChar then return end
+        local lp = Players.LocalPlayer
+        local myChar = lp.Character
+        if not myChar then return end
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHrp then return end
 
-        local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-        local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
-        if not targetHrp or not targetHum then return end
-        if targetHum.Health <= 0 then return end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            -- NUNCA processa o próprio player
+            if plr.UserId ~= lp.UserId then
+                local targetChar = plr.Character
+                if targetChar and targetChar.Parent then
+                    -- Confirma 100% que não é o meu character
+                    if targetChar ~= myChar then
+                        local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+                        local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+                        if targetHrp and targetHrp ~= myHrp and targetHum and targetHum.Health > 0 then
+                            local dist = (myHrp.Position - targetHrp.Position).Magnitude
+                            if dist < 6 then
+                                -- Direção: pra longe de mim
+                                local dir = targetHrp.Position - myHrp.Position
+                                if dir.Magnitude < 0.1 then
+                                    dir = Vector3.new(math.random(-1, 1), 1, math.random(-1, 1))
+                                end
+                                dir = dir.Unit
 
-        -- Cria BodyVelocity com força INFINITA (igual Ken)
-        local bv = Instance.new("BodyVelocity")
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = Vector3.new(
-            math.random(-5000, 5000),
-            math.random(5000, 10000),
-            math.random(-5000, 5000)
-        )
-        bv.Parent = targetHrp
+                                -- APLICA SÓ NO HRP DO ALVO (nunca no meu)
+                                local bv = Instance.new("BodyVelocity")
+                                bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                bv.Velocity = Vector3.new(dir.X * 3000, 3000, dir.Z * 3000)
+                                bv.Parent = targetHrp
+                                task.delay(0.2, function()
+                                    if bv and bv.Parent then bv:Destroy() end
+                                end)
 
-        -- Destrói depois de 0.1s (pra não travar o player pra sempre)
-        task.delay(0.1, function()
-            if bv and bv.Parent then
-                bv:Destroy()
-            end
-        end)
-    end
+                                -- Também teleporta pra longe (garante)
+                                targetHrp.CFrame = targetHrp.CFrame + Vector3.new(
+                                    dir.X * 30,
+                                    50,
+                                    dir.Z * 30
+                                )
 
-    -- Conecta Touched em TODAS as partes do MEU corpo (não só HRP)
-    local function connectTouched(character)
-        if not character then return end
-        for _, part in ipairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                local conn = part.Touched:Connect(function(hit)
-                    if not Config.Fling.Enabled then return end
-                    local hitChar = hit:FindFirstAncestorOfClass("Model")
-                    if not hitChar then return end
-                    local hitPlr = Players:GetPlayerFromCharacter(hitChar)
-                    if hitPlr and hitPlr ~= LocalPlayer then
-                        applyFling(hitChar)
+                                pcall(function()
+                                    targetHum.PlatformStand = true
+                                end)
+                            end
+                        end
                     end
-                end)
-                flingTouchConns[#flingTouchConns + 1] = conn
+                end
             end
         end
-    end
-
-    connectTouched(myChar)
-
-    -- Reconecta quando eu respawnar
-    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
-        task.wait(1)
-        connectTouched(newChar)
     end)
 end
 
