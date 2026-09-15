@@ -636,62 +636,68 @@ local function setInfJump(state)
     end)
 end
 
--- ═══════════ FLING (só arremessa se encostar de verdade) ═══════════
+-- ═══════════ FLING (arremessa o OUTRO player) ═══════════
 flingConn = nil
-flingCooldown = {}
+flingTouchedConns = {}
 
 local function setFling(state)
+    -- Desconecta tudo
     if flingConn then flingConn:Disconnect() flingConn = nil end
-    flingCooldown = {}
+    for _, c in pairs(flingTouchedConns) do
+        if c then c:Disconnect() end
+    end
+    flingTouchedConns = {}
+
     if not state then return end
 
-    flingConn = RunService.Heartbeat:Connect(function()
-        local char = LocalPlayer.Character
+    local function attachToCharacter(char)
         if not char then return end
-        local myHrp = char:FindFirstChild("HumanoidRootPart")
-        if not myHrp then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
 
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                local targetChar = plr.Character
-                if targetChar then
-                    local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-                    local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
-                    if targetHrp and targetHum and targetHum.Health > 0 then
-                        local dist = (myHrp.Position - targetHrp.Position).Magnitude
-                        
-                        -- Só ativa se estiver MUITO perto (encostando de verdade)
-                        if dist < 3.5 then
-                            -- Cooldown de 0.3s por player (evita spam)
-                            local now = tick()
-                            if flingCooldown[plr] and now - flingCooldown[plr] < 0.3 then
-                                return
-                            end
-                            flingCooldown[plr] = now
+        -- Detecta quando OUTRO player toca no MEU personagem
+        local conn = hrp.Touched:Connect(function(hit)
+            local hitChar = hit:FindFirstAncestorOfClass("Model")
+            if not hitChar then return end
+            local hitPlr = Players:GetPlayerFromCharacter(hitChar)
+            if not hitPlr or hitPlr == LocalPlayer then return end
 
-                            -- Calcula direção pra longe de você
-                            local dir = targetHrp.Position - myHrp.Position
-                            if dir.Magnitude < 0.1 then
-                                dir = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
-                            end
-                            dir = dir.Unit
+            local targetHrp = hitChar:FindFirstChild("HumanoidRootPart")
+            local targetHum = hitChar:FindFirstChildOfClass("Humanoid")
+            if not targetHrp or not targetHum then return end
+            if targetHum.Health <= 0 then return end
 
-                            -- FORÇA MUITO ALTA (arremessa pro void de verdade)
-                            targetHrp.AssemblyLinearVelocity = Vector3.new(
-                                dir.X * 1500,
-                                2000,
-                                dir.Z * 1500
-                            )
+            -- ARREMESSA O OUTRO PLAYER (não você)
+            local myHrp = char:FindFirstChild("HumanoidRootPart")
+            if not myHrp then return end
 
-                            -- Ativa PlatformStand (perde controle)
-                            pcall(function()
-                                targetHum.PlatformStand = true
-                            end)
-                        end
-                    end
-                end
+            local dir = targetHrp.Position - myHrp.Position
+            if dir.Magnitude < 0.1 then
+                dir = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
             end
-        end
+            dir = dir.Unit
+
+            -- Força alta no HRP DO OUTRO
+            targetHrp.AssemblyLinearVelocity = Vector3.new(
+                dir.X * 1500,
+                2000,
+                dir.Z * 1500
+            )
+
+            pcall(function()
+                targetHum.PlatformStand = true
+            end)
+        end)
+        flingTouchedConns[#flingTouchedConns + 1] = conn
+    end
+
+    if LocalPlayer.Character then
+        attachToCharacter(LocalPlayer.Character)
+    end
+
+    flingConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
+        task.wait(1)
+        attachToCharacter(newChar)
     end)
 end
 
